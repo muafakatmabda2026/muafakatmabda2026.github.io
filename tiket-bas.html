@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="ms">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Tiket Bas Pulang Bermalam - MABDA</title>
+  <style>
+    body { font-family: Arial, sans-serif; background: #f9fafb; color: #222; margin: 0; padding: 20px; }
+    .container { max-width: 800px; margin: auto; background: #fff; padding: 24px; border-radius: 8px; box-shadow: 0 4px 14px rgba(0,0,0,0.06); }
+    h1 { text-align: center; margin-top: 0; }
+    .meta { text-align: center; color: #555; margin-bottom: 18px; }
+    .important { background: #fff3cd; border-left: 4px solid #ffe08a; padding: 12px; margin: 12px 0; }
+    .note { margin: 12px 0; }
+    ol { padding-left: 1.2em; }
+    .back { display:inline-block; margin-bottom: 12px; text-decoration:none; color:#0d6efd; }
+    footer { text-align:center; color:#777; margin-top:18px; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <a class="back" href="index.html">← Kembali</a>
+    <h1>TIKET BAS PULANG BERMALAM WAJIB MAC (RAYA)</h1>
+    <p class="meta">17/03/2026 - 29/03/2026 (12 HARI)</p>
+
+    <p>Assalamualaikum &amp; Salam Sejahtera,</p>
+
+    <p>Ibu bapa/penjaga dimohon untuk membaca maklumat berikut dengan teliti sebelum membuat pembelian tiket bas:</p>
+
+    <div class="important">
+      <strong>Tarikh tutup pembelian:</strong>
+      <p>⛔ 10/03/2026 (Selasa, 5:00 petang)</p>
+    </div>
+
+    <h3>PENTING:</h3>
+    <ul>
+      <li>✅ Pastikan destinasi dipilih dengan betul</li>
+      <li>✅ Semak maklumat pelajar (Nama, No MyKad, Kelas, dan lain-lain) sebelum membuat pembayaran</li>
+    </ul>
+
+    <h3>POLISI PEMBATALAN SELEPAS PEMBELIAN TIKET</h3>
+    <p>Semua pembelian tempahan seat adalah tertakluk kepada polisi pembatalan seperti berikut:-</p>
+
+    <ol>
+      <li>Sebarang pembatalan yang dilakukan selepas pembelian adalah tidak dibenarkan untuk pemulangan wang (no refund). Namun, tempahan tempat duduk dibenarkan untuk carry forward ke trip akan datang, dengan syarat alasan yang munasabah diberikan berserta bukti sokongan.</li>
+      <li>Sekiranya trip seterusnya juga berlaku pembatalan tempahan, bayaran tersebut dikira hangus.</li>
+      <li>Pembatalan dalam tempoh 5 hari sebelum tarikh perjalanan pula akan dianggap hangus, kecuali jika berlaku kecemasan yang disahkan (contoh: surat hospital, sijil sakit, dsb) dan tertakluk kepada budi bicara Admin.</li>
+      <li>Tidak memaklumkan langsung kepada team pengurusan bas berkenaan pembatalan perjalanan - wang bayaran dianggap hangus.</li>
+    </ol>
+
+    <h3>POLISI PENUKARAN PIT STOP SELEPAS PEMBELIAN TIKET</h3>
+    <ol>
+      <li>Pertukaran Pit Stop dibenarkan (tetapi tidak digalakkan) dan perlu dimaklumkan kepada pihak pengurusan bas 5 hari sebelum jadual perjalanan.</li>
+      <li>Pertukaran Pit Stop dibenarkan bagi laluan yang sama (bas yang sama).</li>
+      <li>Hanya kes-kes terpencil (kecemasan) dibenarkan dalam penukaran Pit Stop kurang dari 5 hari.</li>
+    </ol>
+
+    <p class="note">Apa jua masalah anda yang memerlukan pembatalan atau penukaran Pit Stop, sila berhubung dengan pihak kami untuk pertimbangan sewajarnya. Insya Allah, kami akan usaha santuni seoptimum mungkin bagi mencapai matlamat perkhidmatan yang mengutamakan kebajikan dan kesejahteraan terpelihara.</p>
+
+    <div id="site-footer"></div>
+
+    <script>
+      fetch('partials/footer.html')
+        .then(r => { if (!r.ok) throw new Error('Footer not found'); return r.text(); })
+        .then(html => { document.getElementById('site-footer').innerHTML = html; })
+        .catch(() => { /* ignore if footer not available */ });
+    </script>
+  </div>
+</body>
+</html>

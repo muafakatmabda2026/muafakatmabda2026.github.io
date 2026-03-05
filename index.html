@@ -46,15 +46,18 @@
     <h1>MABDA</h1>
     <p style="text-align:center;">Laman maklumat untuk ibu bapa & waris</p>
 
-    <a class="btn" href="#">🚌 Maklumat Bas</a>
+    <a class="btn" href="tiket-bas.html">🚌 Maklumat Bas</a>
     <a class="btn" href="#">📢 Pengumuman Rasmi</a>
-    <a class="btn" href="#">🎥 Siaran Langsung Majlis</a>
-    <a class="btn" href="#">📄 Dokumen & Borang</a>
     <a class="btn" href="#">📞 Hubungi Jawatankuasa</a>
 
-    <footer>
-      © Muafakat MABDA
-    </footer>
+    <div id="site-footer"></div>
+
+    <script>
+      fetch('partials/footer.html')
+        .then(r => { if (!r.ok) throw new Error('Footer not found'); return r.text(); })
+        .then(html => { document.getElementById('site-footer').innerHTML = html; })
+        .catch(() => { /* ignore if footer not available */ });
+    </script>
   </div>
 </body>
 </html>
