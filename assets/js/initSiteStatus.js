@@ -39,11 +39,18 @@ function initSiteStatus(container) {
       it.addEventListener('click', () => selectItem(it));
     });
 
-    // initialize: pick active item if any, or first item
+    // initialize: prefer item matching the pill's status class, then any pre-marked active, then first item
     let initial = items[0];
-    items.forEach(i => {
-      if (i.classList.contains('active')) initial = i;
-    });
+    try {
+      const pillCls = pill ? Array.from(pill.classList).find(c => c.startsWith('status--')) : null;
+      if (pillCls) {
+        const match = items.find(i => i.classList.contains(pillCls));
+        if (match) initial = match;
+      }
+    } catch (e) { /* ignore */ }
+    // if none matched by pill class, prefer an item already marked active
+    const preActive = items.find(i => i.classList.contains('active'));
+    if (preActive) initial = preActive;
     selectItem(initial);
   } catch (err) {
     console.warn('initSiteStatus error', err);

@@ -23,6 +23,24 @@ function initSiteHeader(container) {
       // close on Escape
       document.addEventListener('keydown', (e) => { if (e.key === 'Escape') { nav.classList.remove('open'); nav.setAttribute('aria-hidden','true'); } });
     }
+
+    // set dynamic title: prefer <body data-title="...">, fallback to filename-based labels
+    try {
+      const titleEl = container.querySelector('.site-title');
+      if (titleEl) {
+        const bodyTitle = document.body && document.body.dataset && document.body.dataset.title;
+        if (bodyTitle) {
+          titleEl.textContent = bodyTitle;
+        } else {
+          const p = (window.location.pathname || '').split('/').pop() || 'index.html';
+          let label = 'MABDA';
+          if (p === '' || p === 'index.html') label = 'Home';
+          else if (p.toLowerCase().includes('tiket-bas') || p.toLowerCase().includes('tiket-mabda')) label = 'Mabda Liner';
+          else if (p.toLowerCase().includes('tiket')) label = 'Tiket';
+          titleEl.textContent = label;
+        }
+      }
+    } catch (e) { /* ignore */ }
   } catch (err) {
     console.warn('initSiteHeader error', err);
   }
