@@ -73,6 +73,36 @@
 
     <p class="note">Apa jua masalah anda yang memerlukan pembatalan atau penukaran Pit Stop, sila berhubung dengan pihak kami untuk pertimbangan sewajarnya. Insya Allah, kami akan usaha santuni seoptimum mungkin bagi mencapai matlamat perkhidmatan yang mengutamakan kebajikan dan kesejahteraan terpelihara.</p>
 
+    <div class="agreement" style="margin-top:18px;padding:12px;border-radius:8px;background:#f8f9fa;border:1px solid #eef3fb;">
+      <label style="display:flex;align-items:center;gap:10px;">
+        <input id="agree-checkbox" type="checkbox" />
+        <span>Saya sudah baca, faham dan setuju dengan syarat.</span>
+      </label>
+
+      <div style="margin-top:12px;">
+        <button id="order-btn" class="btn" disabled style="background:#198754;border:none;">Beli Tiket / Order</button>
+      </div>
+
+      <script>
+        (function(){
+          var cb = document.getElementById('agree-checkbox');
+          var btn = document.getElementById('order-btn');
+          var url = 'https://muafakatmabdastore.onpay.my/order/form/pbw-aidilfitri';
+          if(!cb || !btn) return;
+          cb.addEventListener('change', function(){
+            btn.disabled = !cb.checked;
+            btn.style.opacity = cb.checked ? '1' : '0.6';
+            btn.style.pointerEvents = cb.checked ? 'auto' : 'none';
+          });
+          btn.addEventListener('click', function(e){
+            if(btn.disabled) return;
+            window.open(url, '_blank', 'noopener');
+          });
+        })();
+      </script>
+
+    </div>
+
     <div id="site-footer"></div>
 
     <script>
