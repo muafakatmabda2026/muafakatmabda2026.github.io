@@ -15,12 +15,9 @@
     .back { display:inline-block; margin-bottom: 12px; text-decoration:none; color:#0d6efd; }
     footer { text-align:center; color:#777; margin-top:18px; }
   </style>
+  <script src="assets/js/initSiteStatus.js"></script>
 </head>
 <body>
-  <div class="container">
-    <a class="back" href="index.html">← Kembali</a>
-    <h1>TIKET MABDA LINER PULANG BERMALAM WAJIB MAC (RAYA)</h1>
-    <p class="meta">17/03/2026 - 29/03/2026 (12 HARI)</p>
     <div id="site-status"></div>
     <script>
       fetch('partials/status.html')
@@ -31,55 +28,8 @@
           if (typeof initSiteStatus === 'function') initSiteStatus(node);
         })
         .catch(() => {});
-
-      function initSiteStatus(container) {
-        try {
-          const panel = container.querySelector('.status-panel');
-          const toggle = container.querySelector('.status-toggle');
-          const pill = container.querySelector('.status-pill');
-          if (pill) pill.title = pill.textContent.trim();
-          const items = Array.from(container.querySelectorAll('.status-item'));
-          const desc = container.querySelector('.status-desc');
-
-          if (!panel) return;
-
-          function setOpen(open) {
-            panel.classList.toggle('open', open);
-            panel.setAttribute('aria-hidden', String(!open));
-          }
-
-          toggle && toggle.addEventListener('click', () => setOpen(!panel.classList.contains('open')));
-
-          document.addEventListener('keydown', (e) => {
-            if (e.key === 'i' || e.key === 'I') {
-              setOpen(!panel.classList.contains('open'));
-            }
-          });
-
-          function selectItem(item) {
-            items.forEach(i => i.classList.remove('active'));
-            if (!item) return;
-            item.classList.add('active');
-            // Do NOT modify the status pill here — pill is admin-controlled and static.
-            if (desc) {
-              desc.textContent = item.dataset.desc || '';
-              desc.style.display = desc.textContent ? 'block' : 'none';
-            }
-          }
-
-          items.forEach(it => {
-            it.addEventListener('click', () => selectItem(it));
-          });
-
-          const pillCls = Array.from(pill.classList).find(c => c.startsWith('status--'));
-          let initial = items.find(i => pillCls && i.classList.contains(pillCls));
-          if (!initial) initial = items[0];
-          selectItem(initial);
-        } catch (err) {
-          console.warn('initSiteStatus error', err);
-        }
-      }
     </script>
+    
 
     <p>Assalamualaikum &amp; Salam Sejahtera,</p>
 
