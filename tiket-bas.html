@@ -21,6 +21,13 @@
     <a class="back" href="index.html">← Kembali</a>
     <h1>TIKET BAS PULANG BERMALAM WAJIB MAC (RAYA)</h1>
     <p class="meta">17/03/2026 - 29/03/2026 (12 HARI)</p>
+    <div id="site-status"></div>
+    <script>
+      fetch('partials/status.html')
+        .then(r => { if (!r.ok) throw new Error('Status not found'); return r.text(); })
+        .then(html => { document.getElementById('site-status').innerHTML = html; })
+        .catch(() => {});
+    </script>
 
     <p>Assalamualaikum &amp; Salam Sejahtera,</p>
 
