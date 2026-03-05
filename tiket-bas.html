@@ -25,8 +25,61 @@
     <script>
       fetch('partials/status.html')
         .then(r => { if (!r.ok) throw new Error('Status not found'); return r.text(); })
-        .then(html => { document.getElementById('site-status').innerHTML = html; })
+        .then(html => {
+          const node = document.getElementById('site-status');
+          node.innerHTML = html;
+          if (typeof initSiteStatus === 'function') initSiteStatus(node);
+        })
         .catch(() => {});
+
+      function initSiteStatus(container) {
+        try {
+          const panel = container.querySelector('.status-panel');
+          const toggle = container.querySelector('.status-toggle');
+          const pill = container.querySelector('.status-pill');
+          const items = Array.from(container.querySelectorAll('.status-item'));
+          const desc = container.querySelector('.status-desc');
+
+          if (!panel) return;
+
+          function setOpen(open) {
+            panel.classList.toggle('open', open);
+            panel.setAttribute('aria-hidden', String(!open));
+          }
+
+          toggle && toggle.addEventListener('click', () => setOpen(!panel.classList.contains('open')));
+
+          document.addEventListener('keydown', (e) => {
+            if (e.key === 'i' || e.key === 'I') {
+              setOpen(!panel.classList.contains('open'));
+            }
+          });
+
+          function selectItem(item) {
+            items.forEach(i => i.classList.remove('active'));
+            if (!item) return;
+            item.classList.add('active');
+            const cls = Array.from(item.classList).find(c => c.startsWith('status--')) || '';
+            pill.className = 'status-pill ' + cls;
+            pill.textContent = item.textContent.trim();
+            if (desc) {
+              desc.textContent = item.dataset.desc || '';
+              desc.style.display = desc.textContent ? 'block' : 'none';
+            }
+          }
+
+          items.forEach(it => {
+            it.addEventListener('click', () => selectItem(it));
+          });
+
+          const pillCls = Array.from(pill.classList).find(c => c.startsWith('status--'));
+          let initial = items.find(i => pillCls && i.classList.contains(pillCls));
+          if (!initial) initial = items[0];
+          selectItem(initial);
+        } catch (err) {
+          console.warn('initSiteStatus error', err);
+        }
+      }
     </script>
 
     <p>Assalamualaikum &amp; Salam Sejahtera,</p>

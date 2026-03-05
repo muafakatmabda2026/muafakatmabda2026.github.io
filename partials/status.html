@@ -2,11 +2,16 @@
   <style>
     .status-header { display:flex; align-items:center; gap:10px; }
     .status-pill { padding:6px 10px; border-radius:999px; color:#fff; font-weight:600; }
+    .status-panel { overflow:hidden; max-height:0; transition:max-height 300ms ease; }
+    .status-panel.open { max-height:600px; }
     .status-list { margin:0; padding:0; list-style:none; display:grid; grid-template-columns:1fr 1fr; gap:6px; }
-    .status-item { display:flex; align-items:center; gap:8px; padding:4px 0; color:#222; }
-    .status-item .dot { width:12px; height:12px; border-radius:50%; display:inline-block; }
+    .status-item { display:flex; align-items:center; gap:8px; padding:6px 8px; color:#222; cursor:pointer; border-radius:6px; }
+    .status-item:hover { background:rgba(13,110,253,0.04); }
+    .status-item.active { background:rgba(13,110,253,0.08); }
+    .status-item .dot { width:12px; height:12px; border-radius:50%; display:inline-block; flex:0 0 12px; }
+    .status-desc { margin-top:8px; padding:8px; border-radius:6px; background:#ffffff; border:1px solid #eef3fb; color:#333; display:none; }
 
-    /* Color mapping: change values here to adjust palette */
+    /* Color mapping */
     .status--survey-not-started { --status-color: #dc3545; } /* merah */
     .status--survey-finished { --status-color: #6c757d; } /* kelabu */
     .status--determination { --status-color: #6f42c1; } /* ungu */
@@ -21,25 +26,24 @@
 
   <div class="status-header">
     <strong style="font-size:16px;">Status Mabda Liner:</strong>
-    <!--
-      Set the current status by applying the corresponding class to both the pill
-      and (optionally) the matching list item. Example: class="status-pill status--survey-not-started"
-    -->
-    <span class="status-pill status--survey-not-started">Survey Belum Bermula</span>
+    <span class="status-pill status--determination">Penentuan Jumlah</span>
+    <button class="status-toggle" aria-label="Togol senarai status" title="Tekan 'i' untuk tunjukkan/sempulkan status" style="margin-left:auto;background:none;border:0;font-weight:600;cursor:pointer;color:#0d6efd;padding:6px;">i</button>
   </div>
 
   <div style="margin-top:10px;color:#444;font-size:14px;">
     <div style="margin-bottom:6px;"><strong>Senarai Status:</strong></div>
-    <ul class="status-list">
-      <li class="status-item status--survey-not-started"><span class="dot"></span>Survey Belum Bermula</li>
-      <li class="status-item status--survey-finished"><span class="dot"></span>Survey Tamat</li>
-      <li class="status-item status--determination"><span class="dot"></span>Penentuan Jumlah Mabda Liner berdasarkan survey</li>
-      <li class="status-item status--booking-not-started"><span class="dot"></span>Tempahan Tiket Belum Bermula</li>
-      <li class="status-item status--booking-open"><span class="dot"></span>Tempahan Tiket Sedang Berlangsung</li>
-      <li class="status-item status--booking-closed"><span class="dot"></span>Tempahan Tiket Tamat</li>
-      <li class="status-item status--list-published"><span class="dot"></span>Senarai Nama Pelajar Telah Dikeluarkan</li>
-    </ul>
-  </div>
+    <div class="status-panel" aria-hidden="true">
+      <ul class="status-list">
+        <li class="status-item status--survey-not-started" data-desc="Survey belum mula dijalankan. Sila isi borang survey apabila dibuka."><span class="dot"></span>Survey Belum Bermula</li>
+        <li class="status-item status--survey-finished" data-desc="Survey telah ditutup dan data sedang diproses."><span class="dot"></span>Survey Tamat</li>
+        <li class="status-item status--determination" data-desc="Menentukan jumlah Mabda Liner yang diperlukan berdasarkan keputusan survey."><span class="dot"></span>Penentuan Jumlah Mabda Liner berdasarkan survey</li>
+        <li class="status-item status--booking-not-started" data-desc="Tempahan tiket belum dibuka. Tunggu pengumuman tarikh buka."><span class="dot"></span>Tempahan Tiket Belum Bermula</li>
+        <li class="status-item status--booking-open" data-desc="Tempahan tiket sedang berlangsung. Sila semak maklumat pelajar sebelum pembayaran."><span class="dot"></span>Tempahan Tiket Sedang Berlangsung</li>
+        <li class="status-item status--booking-closed" data-desc="Tempahan dalam tempoh ini ditutup. Hubungi pengurusan jika kecemasan."><span class="dot"></span>Tempahan Tiket Tamat</li>
+        <li class="status-item status--list-published" data-desc="Senarai nama pelajar telah dikeluarkan. Sila semak senarai untuk pengesahan tempat."><span class="dot"></span>Senarai Nama Pelajar Telah Dikeluarkan</li>
+      </ul>
 
-  <div style="margin-top:10px;font-size:13px;color:#666;">Kemas kini status ini dengan menukar kelas pada elemen <em>status-pill</em> kepada salah satu kelas <strong>status--*</strong> di atas; dot pada senarai akan menggunakan warna yang sama.</div>
+      <div class="status-desc" aria-live="polite"></div>
+    </div>
+  </div>
 </div>
