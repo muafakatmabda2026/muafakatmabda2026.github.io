@@ -105,6 +105,10 @@
           var btn = document.getElementById('order-btn');
           var url = 'https://muafakatmabdastore.onpay.my/order/form/pbw-aidilfitri';
           if(!cb || !btn) return;
+          // initialize visual state so disabled appears greyed when page first loads
+          btn.disabled = !cb.checked;
+          btn.style.opacity = cb.checked ? '1' : '0.6';
+          btn.style.pointerEvents = cb.checked ? 'auto' : 'none';
           cb.addEventListener('change', function(){
             btn.disabled = !cb.checked;
             btn.style.opacity = cb.checked ? '1' : '0.6';
