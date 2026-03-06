@@ -53,11 +53,14 @@
             msg.textContent = 'Login successful. Redirecting…';
             setTimeout(()=>{ window.location.href = next; }, 400);
           } else {
-            msg.textContent = 'Login failed. Please check your credentials.';
+            var detail = '';
+            try{ if(res && res.data && res.data.error) detail = ' — ' + res.data.error; else if(res && res.via) detail = ' (via ' + res.via + ')'; }catch(e){}
+            msg.textContent = 'Login failed. Please check your credentials.' + detail;
           }
         }).catch(err => {
           console.error(err);
-          msg.textContent = 'Connection error. Please check the console.';
+          var em = (err && err.message) ? err.message : JSON.stringify(err);
+          msg.textContent = 'Connection error: ' + em;
         });
       });
 
