@@ -6,7 +6,13 @@
 
   function isAdmin() { return !!localStorage.getItem(STORAGE_KEY); }
 
-  function setAdmin(user) { if(user) localStorage.setItem(STORAGE_KEY, user); else localStorage.removeItem(STORAGE_KEY); }
+  function setAdmin(user) {
+    if(user) localStorage.setItem(STORAGE_KEY, user); else localStorage.removeItem(STORAGE_KEY);
+    try{
+      if(user){ document.body && (document.body.dataset.admin = '1'); }
+      else { document.body && delete document.body.dataset.admin; }
+    }catch(e){}
+  }
 
   function updateUi() {
     const adminLink = document.getElementById('admin-link');
@@ -15,9 +21,11 @@
     if(isAdmin()){
       adminLink.style.display = 'block';
       adminLogin.textContent = 'Logout';
+      try{ document.body && (document.body.dataset.admin = '1'); }catch(e){}
     } else {
       adminLink.style.display = 'none';
       adminLogin.textContent = 'Admin Login';
+      try{ document.body && delete document.body.dataset.admin; }catch(e){}
     }
   }
 
