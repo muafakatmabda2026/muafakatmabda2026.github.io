@@ -39,7 +39,14 @@
   <script>
     // fetch partials (same pattern used elsewhere)
     (function(){
-      function fetchAndInsert(path, selector){ fetch(path).then(r=>r.text()).then(html=>{ document.querySelector(selector).innerHTML = html; }).catch(()=>{}); }
+      function fetchAndInsert(path, selector){
+        fetch(path).then(r=>{ if(!r.ok) throw new Error('not found'); return r.text(); }).then(html=>{
+          const node = document.querySelector(selector);
+          if(node) node.innerHTML = html;
+          try{ if(typeof initSiteHeader === 'function' && selector.indexOf('header')!==-1) initSiteHeader(node); }catch(e){}
+          try{ if(typeof initSiteStatus === 'function' && selector.indexOf('status')!==-1) initSiteStatus(node); }catch(e){}
+        }).catch(()=>{});
+      }
       fetchAndInsert('partials/header.html', '#site-header-placeholder');
       fetchAndInsert('partials/status.html', '#site-status-placeholder');
       fetchAndInsert('partials/footer.html', '#site-footer-placeholder');
