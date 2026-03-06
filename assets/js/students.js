@@ -11,7 +11,7 @@
   let pitstopCounts = {};
   let currentPitstop = 'All';
   let searchTerm = '';
-  const isAdmin = !!localStorage.getItem('mabda_admin_user');
+  function isAdmin(){ return !!localStorage.getItem('mabda_admin_user'); }
 
   function buildRows(rows){
     headers = rows[0].map(h => String(h || '').trim());
@@ -76,14 +76,17 @@
       const checked = checkedVal !== '' && checkedVal !== 'false' && checkedVal !== '0';
       const colIdx = headers.indexOf('Checked');
       const colNumber = colIdx >= 0 ? (colIdx + 1) : '';
+      // include checkbox only when admin is logged in
+      const checkboxHtml = isAdmin() ? ('<div class="student-actions">'
+            + '<input type="checkbox" class="finalist-checked" data-row="'+item.sheetRow+'" data-col="'+colNumber+'"'+(checked? ' checked':'')+'> '
+            +'</div>') : '';
+
       return '<div class="student-row">'
         + '<div class="student-main">'
           + '<div class="student-name">'+name+'</div>'
           + '<div class="student-meta">'+no + ' • ' + ting + (phone? ' • ' + phone : '') + (pit? ' • ' + pit : '') +'</div>'
         + '</div>'
-        + (isAdmin ? ('<div class="student-actions">'
-            + '<input type="checkbox" class="finalist-checked" data-row="'+item.sheetRow+'" data-col="'+colNumber+'"'+(checked? ' checked':'')+'> '
-            +'</div>') : '')
+        + checkboxHtml
         + '</div>';
     });
 
@@ -128,6 +131,17 @@
       buildRows(rows);
       renderControls();
       renderList();
+
+      // Re-render list when login state changes so checkboxes appear only after login
+      function refreshIfAuthChanged(){ renderList(); }
+      document.addEventListener('click', function(e){
+        const t = e.target;
+        if(t && (t.id === 'admin-login' || (t.closest && t.closest('#admin-login')))){
+          // allow login handler to complete then re-render
+          setTimeout(refreshIfAuthChanged, 600);
+        }
+      });
+      window.addEventListener('storage', function(e){ if(e.key === 'mabda_admin_user') refreshIfAuthChanged(); });
 
       // checkbox handler (delegated)
       container.addEventListener('change', function(e){
