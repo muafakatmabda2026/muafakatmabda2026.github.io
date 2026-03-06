@@ -9,17 +9,22 @@
   <script src="assets/js/initHeader.js"></script>
   <script src="assets/js/adminAuth.js"></script>
 </head>
+</body>
 <body data-title="Admin">
-  <div id="site-header"></div>
+  <div id="site-header-placeholder"></div>
   <script>
     fetch('partials/header.html')
-      .then(r=>r.text()).then(html=>{ document.getElementById('site-header').innerHTML=html; if(typeof initSiteHeader==='function') initSiteHeader(document.getElementById('site-header')); })
+      .then(r=>r.text()).then(html=>{ const node = document.getElementById('site-header-placeholder'); node.innerHTML=html; if(typeof initSiteHeader==='function') initSiteHeader(node); })
       .catch(()=>{});
   </script>
 
-  <h1>Admin Kawalan</h1>
-  <div class="note">Halaman ini tersedia hanya untuk admin yang telah log masuk melalui butang "Admin Login".</div>
+  <main class="container">
+    <h1>Admin Kawalan</h1>
+    <div class="note">Halaman ini tersedia hanya untuk admin yang telah log masuk melalui butang "Admin Login".</div>
 
-  <p>Contoh tindakan admin boleh diletakkan di sini (urus senarai admin, lihat log, eksport).</p>
+    <p>Contoh tindakan admin boleh diletakkan di sini (urus senarai admin, lihat log, eksport).</p>
+  </main>
+
+  <div id="site-footer-placeholder"></div>
 </body>
 </html>

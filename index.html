@@ -46,21 +46,21 @@
     <script src="assets/js/adminAuth.js"></script>
 </head>
 <body data-title="Home">
-  <div class="container">
-    <div id="site-header"></div>
+  <div id="site-header-placeholder"></div>
+  <main class="container">
     <script>
       fetch('partials/header.html')
         .then(r => { if (!r.ok) throw new Error('Header not found'); return r.text(); })
-        .then(html => { const node = document.getElementById('site-header'); node.innerHTML = html; if (typeof initSiteHeader === 'function') initSiteHeader(node); })
+        .then(html => { const node = document.getElementById('site-header-placeholder'); node.innerHTML = html; if (typeof initSiteHeader === 'function') initSiteHeader(node); })
         .catch(() => {});
     </script>
 
-    <div id="site-status"></div>
+    <div id="site-status-placeholder"></div>
     <script>
       fetch('partials/status.html')
         .then(r => { if (!r.ok) throw new Error('Status not found'); return r.text(); })
         .then(html => {
-          const node = document.getElementById('site-status');
+          const node = document.getElementById('site-status-placeholder');
           node.innerHTML = html;
           if (typeof initSiteStatus === 'function') initSiteStatus(node);
         })
@@ -70,15 +70,14 @@
     <a class="btn" href="tiket-bas.html">🚌 Mabda Liner</a>
     <a class="btn" href="#">📢 Pengumuman Rasmi</a>
     <a class="btn" href="#">📞 Hubungi Jawatankuasa</a>
+  </main>
 
-    <div id="site-footer"></div>
-
-    <script>
-      fetch('partials/footer.html')
-        .then(r => { if (!r.ok) throw new Error('Footer not found'); return r.text(); })
-        .then(html => { document.getElementById('site-footer').innerHTML = html; })
-        .catch(() => { /* ignore if footer not available */ });
-    </script>
-  </div>
+  <div id="site-footer-placeholder"></div>
+  <script>
+    fetch('partials/footer.html')
+      .then(r => { if (!r.ok) throw new Error('Footer not found'); return r.text(); })
+      .then(html => { document.getElementById('site-footer-placeholder').innerHTML = html; })
+      .catch(() => { /* ignore if footer not available */ });
+  </script>
 </body>
 </html>
