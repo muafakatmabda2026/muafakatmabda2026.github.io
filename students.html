@@ -13,6 +13,16 @@
     table.students-table thead th{background:#f3f3f3}
     .invalid-row{background:#ffecec}
     .small{font-size:0.9rem;color:#666}
+    /* Pitstop selector + search bar */
+    .controls{display:flex;gap:8px;margin:8px 0;align-items:center}
+    .controls select, .controls input{flex:1;padding:8px;border:1px solid #ddd;border-radius:6px}
+    .controls .count{flex:0 0 auto;margin-left:6px;font-size:0.9rem;color:#444}
+    .student-row{display:flex;justify-content:space-between;gap:8px;align-items:center;padding:10px;border-bottom:1px solid #eee}
+    .student-main{flex:1}
+    .student-name{font-weight:600}
+    .student-meta{font-size:0.9rem;color:#555}
+    .student-actions{flex:0 0 auto;margin-left:8px}
+    @media (max-width:480px){ .controls{flex-direction:column} .student-row{flex-direction:column;align-items:stretch} .student-actions{margin-left:0;margin-top:8px} }
   </style>
 </head>
 <body data-title="Senarai Pelajar">
@@ -21,7 +31,6 @@
     <h1>Senarai Pelajar</h1>
     <div id="students-container">Memuatkan…</div>
   </main>
-  <div id="site-status-placeholder"></div>
   <div id="site-footer-placeholder"></div>
 
   <script>
