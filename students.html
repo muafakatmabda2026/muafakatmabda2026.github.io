@@ -28,12 +28,14 @@
     /* hide admin-actions unless body[data-admin="1"] is present */
     body:not([data-admin="1"]) .student-actions{display:none !important}
     @media (max-width:480px){ .controls{flex-direction:column} .student-row{flex-direction:row;align-items:center} .student-actions{margin-left:8px;margin-top:0} .student-name{font-size:15px} .student-meta{font-size:12px} }
+    /* volunteer info line shown above the students list when a pitstop is selected */
+    #volunteer-info{background:#eef6ff;border-left:4px solid #cfe8ff;padding:8px;border-radius:6px;font-weight:600;color:#0b465c;margin-bottom:8px}
   </style>
 </head>
 <body data-title="Senarai Pelajar">
   <div id="site-header-placeholder"></div>
   <main class="container">
-    <h1>Senarai Pelajar</h1>
+    <h1>Senarai Pelajar PB Aidilfitri</h1>
     <div id="students-container">Memuatkan…</div>
   </main>
   <div id="site-footer-placeholder"></div>

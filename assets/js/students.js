@@ -7,12 +7,27 @@
   function escapeHtml(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
   function qs(sel, ctx){ return (ctx || document).querySelector(sel); }
 
+  function formatPhoneHtml(phone){
+    if(!phone) return '';
+    const raw = String(phone || '').trim();
+    // sanitize digits for wa.me (international number without +)
+    const digits = raw.replace(/\D/g,'');
+    if(!digits) return escapeHtml(raw);
+    const href = 'https://wa.me/' + encodeURIComponent(digits);
+    const icon = '/assets/images/whatsapp-icon.png';
+    return '<a class="wa-link" href="'+href+'" target="_blank" rel="noopener">'
+      + escapeHtml(raw)
+      + ' <img src="'+icon+'" alt="WA" style="height:16px;vertical-align:middle;margin-left:6px">'
+      + '</a>';
+  }
+
   // In-memory data structures
   let headers = [];
   let rowsData = []; // { sheetRow: number, row: array, map: {header: value} }
   let pitstopCounts = {};
   let currentPitstop = 'All';
   let searchTerm = '';
+  let pitstopMap = {}; // map pitstop name -> { VolunteerName, VolunteerPhone }
   function isAdmin(){ return !!localStorage.getItem('mabda_admin_user'); }
 
   function buildRows(rows){
@@ -42,6 +57,7 @@
     html += '</select>';
     html += '<input id="students-search" placeholder="Cari nama, no maktab atau telefon" />';
     html += '</div>';
+    html += '<div id="volunteer-info" style="margin:8px 0;color:#154360;font-weight:600"></div>';
     html += '<div id="students-list">Loading…</div>';
     container.innerHTML = html;
 
@@ -65,6 +81,22 @@
   function renderList(){
     const listEl = qs('#students-list');
     if(!listEl) return;
+    // show volunteer info when a specific pitstop is selected
+    const volEl = qs('#volunteer-info');
+    if(volEl){
+      if(currentPitstop && currentPitstop !== 'All' && pitstopMap[currentPitstop]){
+        const v = pitstopMap[currentPitstop];
+        const name = v.VolunteerName || v.Name || '';
+        const phone = v.VolunteerPhone || v.Phone || '';
+        if(name || phone){
+          volEl.innerHTML = 'Volunteer: ' + escapeHtml(name) + (phone ? ' — ' + formatPhoneHtml(phone) : '');
+        } else {
+          volEl.innerHTML = '';
+        }
+      } else {
+        volEl.innerHTML = '';
+      }
+    }
     const filtered = rowsData.filter(matchesFilter);
     if(filtered.length === 0){ listEl.innerHTML = '<p>Tidak ada rekod untuk pilihan ini.</p>'; return; }
 
@@ -72,21 +104,22 @@
       const name = escapeHtml(item.map['Nama Student'] || '');
       const no = escapeHtml(item.map['No Maktab'] || '');
       const ting = escapeHtml(item.map['Tingkatan'] || '');
-      const phone = escapeHtml(item.map['Phone Parent'] || '');
+      const phone = item.map['Phone Parent'] || '';
       const pit = escapeHtml(item.map['PitStop PB'] || item.map['PitStop'] || '');
       const checkedVal = String(item.map['Checked'] || '').toLowerCase();
       const checked = checkedVal !== '' && checkedVal !== 'false' && checkedVal !== '0';
       const colIdx = headers.indexOf('Checked');
       const colNumber = colIdx >= 0 ? (colIdx + 1) : '';
       // include checkbox only when admin is logged in
+      const phoneHtml = phone ? formatPhoneHtml(phone) : '';
       const checkboxHtml = isAdmin() ? ('<div class="student-actions">'
-            + '<input type="checkbox" class="finalist-checked" data-row="'+item.sheetRow+'" data-col="'+colNumber+'"'+(checked? ' checked':'')+'> '
-            +'</div>') : '';
+        + '<input type="checkbox" class="finalist-checked" data-row="'+item.sheetRow+'" data-col="'+colNumber+'"'+(checked? ' checked':'')+'> '
+        +'</div>') : '';
 
       return '<div class="student-row">'
         + '<div class="student-main">'
           + '<div class="student-name">'+name+'</div>'
-          + '<div class="student-meta">'+no + ' • ' + ting + (phone? ' • ' + phone : '') + (pit? ' • ' + pit : '') +'</div>'
+          + '<div class="student-meta">'+no + ' • ' + ting + (phoneHtml? ' • ' + phoneHtml : '') + (pit? ' • ' + pit : '') +'</div>'
         + '</div>'
         + checkboxHtml
         + '</div>';
@@ -104,6 +137,21 @@
       s.id = cb + '_script';
       // request JSONP via proxy (proxy will fetch the target and return the callback-wrapped JS)
       const tgt = APP_SCRIPT_URL + '?action=finalistpb&callback=' + cb;
+      s.src = PROXY_URL + '?url=' + encodeURIComponent(tgt) + '&token=' + encodeURIComponent(PROXY_TOKEN);
+      s.onerror = function(){ cleanup(); reject(new Error('JSONP load error')); };
+      document.head.appendChild(s);
+      setTimeout(()=>{ cleanup(); reject(new Error('JSONP timeout')); }, timeout);
+    });
+  }
+
+  function jsonpFetchPitstops(timeout = 10000){
+    return new Promise((resolve, reject) => {
+      const cb = '__mabda_pitstops_cb_' + Date.now() + '_' + Math.floor(Math.random()*1000);
+      const cleanup = () => { try{ delete window[cb]; }catch(e){} const s = document.getElementById(cb+'_script'); if(s && s.parentNode) s.parentNode.removeChild(s); };
+      window[cb] = function(data){ cleanup(); resolve(data); };
+      const s = document.createElement('script');
+      s.id = cb + '_script';
+      const tgt = APP_SCRIPT_URL + '?action=pitstops&callback=' + cb;
       s.src = PROXY_URL + '?url=' + encodeURIComponent(tgt) + '&token=' + encodeURIComponent(PROXY_TOKEN);
       s.onerror = function(){ cleanup(); reject(new Error('JSONP load error')); };
       document.head.appendChild(s);
@@ -130,7 +178,22 @@
   document.addEventListener('DOMContentLoaded', function(){
     const container = document.getElementById('students-container');
     if(container) container.innerHTML = '<p>Memuatkan data…</p>';
-    jsonpFetchFinalist().then(result => {
+    // fetch pitstops first, then the finalists
+    jsonpFetchPitstops().then(pres => {
+      const prot = Array.isArray(pres) ? pres : (pres && pres.rows) || [];
+      if(prot && prot.length > 1){
+        // build pitstopMap from rows: assume first column is PitStop, second VolunteerName, third VolunteerPhone
+        const nameIdx = 0;
+        const volNameIdx = 1;
+        const volPhoneIdx = 2;
+        prot.slice(1).forEach(r => {
+          const key = String(r[nameIdx]||'').trim();
+          if(!key) return;
+          pitstopMap[key] = { VolunteerName: r[volNameIdx]||'', VolunteerPhone: r[volPhoneIdx]||'' };
+        });
+      }
+      return jsonpFetchFinalist();
+    }).then(result => {
       const rows = Array.isArray(result) ? result : (result && result.rows) || [];
       if(!rows || rows.length === 0) return renderControls();
       buildRows(rows);

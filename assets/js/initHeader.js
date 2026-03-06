@@ -35,7 +35,7 @@ function initSiteHeader(container) {
           const p = (window.location.pathname || '').split('/').pop() || 'index.html';
           let label = 'MABDA';
           if (p === '' || p === 'index.html') label = 'Home';
-          else if (p.toLowerCase().includes('tiket-bas') || p.toLowerCase().includes('tiket-mabda')) label = 'Mabda Liner';
+          else if (p.toLowerCase().includes('tiket-bas') || p.toLowerCase().includes('tiket-mabda')) label = 'Tempah tiket';
           else if (p.toLowerCase().includes('tiket')) label = 'Tiket';
           titleEl.textContent = label;
         }
