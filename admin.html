@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="ms">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Admin - Mabda</title>
+  <style>body{font-family:Arial, sans-serif;padding:20px} .note{background:#fff3cd;padding:12px;border-left:4px solid #ffe08a;border-radius:6px}</style>
+  <script src="assets/js/initHeader.js"></script>
+  <script src="assets/js/adminAuth.js"></script>
+</head>
+<body data-title="Admin">
+  <div id="site-header"></div>
+  <script>
+    fetch('partials/header.html')
+      .then(r=>r.text()).then(html=>{ document.getElementById('site-header').innerHTML=html; if(typeof initSiteHeader==='function') initSiteHeader(document.getElementById('site-header')); })
+      .catch(()=>{});
+  </script>
+
+  <h1>Admin Kawalan</h1>
+  <div class="note">Halaman ini tersedia hanya untuk admin yang telah log masuk melalui butang "Admin Login".</div>
+
+  <p>Contoh tindakan admin boleh diletakkan di sini (urus senarai admin, lihat log, eksport).</p>
+</body>
+</html>
