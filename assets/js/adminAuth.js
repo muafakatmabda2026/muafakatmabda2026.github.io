@@ -1,7 +1,7 @@
 // Simple admin auth integration using provided Apps Script web app
 // WARNING: This is a convenience layer for small/private usage. Do not treat as a production-grade auth.
 (function(){
-  const APP_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwRTfiD53v2MFWaUCg_zTUenOkqDpHFfZ4Di4YY2K71D5HZj4TxfZYAnW33rmplXf58Sg/exec';
+  const APP_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbx2fp9FMd_KL0EHzGkjpaAnnYG9NJJW1YINx1NfNUY6NrNu-cqII9ePZP9o00TkzUEp/exec';
   const STORAGE_KEY = 'mabda_admin_user';
 
   function isAdmin() { return !!localStorage.getItem(STORAGE_KEY); }
@@ -30,6 +30,8 @@
   }
 
   function doLogin(user, pass){
+    // Primary attempt: POST JSON (preferred). If this fails due to CORS
+    // we fall back to a JSONP-style GET (requires the Apps Script to support it).
     fetch(APP_SCRIPT_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -38,11 +40,51 @@
       if(data && data.ok){
         setAdmin(user);
         updateUi();
-        alert('Login berjaya');
+        alert('Login successful');
       } else {
-        alert('Login gagal');
+        alert('Login failed');
       }
-    }).catch(err => { console.error(err); alert('Ralat sambungan'); });
+    }).catch(err => {
+      console.error('Primary login failed:', err);
+      // Likely a CORS/preflight problem; try JSONP fallback
+      tryJsonpLogin(user, pass).then(data => {
+        if(data && data.ok){
+          setAdmin(user);
+          updateUi();
+          alert('Login successful (via fallback)');
+        } else {
+          alert('Login failed');
+        }
+      }).catch(ferr => {
+        console.error('Fallback login failed:', ferr);
+        alert('Connection error. The authentication endpoint blocked the request (CORS).\n\nServer must allow cross-origin requests or support JSONP. See console for details.');
+      });
+    });
+  }
+
+  // JSONP fallback: adds a <script> tag to perform a GET with a callback param.
+  // NOTE: JSONP requires the Apps Script endpoint to accept GET and wrap its
+  // JSON response in the provided callback, e.g. callback({ ok: true }).
+  function tryJsonpLogin(user, pass, timeout = 8000){
+    return new Promise((resolve, reject) => {
+      const cbName = '__mabda_admin_cb_' + Date.now() + '_' + Math.floor(Math.random()*1000);
+      const cleanup = () => {
+        try{ delete window[cbName]; }catch(e){}
+        const s = document.getElementById(cbName + '_script');
+        if(s && s.parentNode) s.parentNode.removeChild(s);
+      };
+
+      window[cbName] = function(data){ cleanup(); resolve(data); };
+
+      const src = APP_SCRIPT_URL + '?user=' + encodeURIComponent(user) + '&pass=' + encodeURIComponent(pass) + '&callback=' + cbName;
+      const s = document.createElement('script');
+      s.src = src;
+      s.id = cbName + '_script';
+      s.onerror = function(e){ cleanup(); reject(new Error('JSONP script load error')); };
+      document.head.appendChild(s);
+
+      setTimeout(() => { cleanup(); reject(new Error('JSONP timeout')); }, timeout);
+    });
   }
 
   function init() {
@@ -69,7 +111,7 @@
       try{
         if(window.location.pathname && window.location.pathname.split('/').pop().toLowerCase() === 'admin.html'){
           if(!isAdmin()){
-            alert('Anda mesti login sebagai admin untuk melihat halaman ini.');
+            alert('You must be logged in as an admin to view this page.');
             window.location.href = 'index.html';
           }
         }
