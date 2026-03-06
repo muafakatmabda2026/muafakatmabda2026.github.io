@@ -46,21 +46,25 @@
   }
 
   function init() {
-    document.addEventListener('DOMContentLoaded', () => {
-      updateUi();
-      const adminLogin = document.getElementById('admin-login');
-      if(adminLogin){
-        adminLogin.addEventListener('click', (e) => {
-          e.preventDefault();
-          if(isAdmin()){
-            // logout
-            if(confirm('Logout admin?')){ setAdmin(null); updateUi(); }
-          } else {
-            showPromptLogin();
-          }
-        });
-      }
+    // update UI immediately (in case header already injected)
+    try { updateUi(); } catch (e) {}
 
+    // delegated click handler so it works regardless of when header is inserted
+    document.addEventListener('click', function(e){
+      const target = e.target;
+      if(!target) return;
+      if(target.id === 'admin-login' || target.closest && target.closest('#admin-login')){
+        e.preventDefault();
+        if(isAdmin()){
+          if(confirm('Logout admin?')){ setAdmin(null); updateUi(); }
+        } else {
+          showPromptLogin();
+        }
+      }
+    });
+
+    // also update UI once DOM is ready
+    document.addEventListener('DOMContentLoaded', () => { updateUi();
       // protect admin.html if accessed directly
       try{
         if(window.location.pathname && window.location.pathname.split('/').pop().toLowerCase() === 'admin.html'){
