@@ -1,6 +1,8 @@
 // Students UI: PitStop selector + search + filtered list (JSONP read, single-checkbox updates)
 (function(){
   const APP_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbziJBrE4FKoyol7JqF---uEoq7tPzd292BGHVIIFR5DlO20z6UaB9qCVqW62uN8K_8k/exec';
+  const PROXY_URL = 'https://mabda-proxy.muafakatmabda2026.workers.dev/';
+  const PROXY_TOKEN = 'mynameisvontdeuxthegreat123$';
 
   function escapeHtml(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
   function qs(sel, ctx){ return (ctx || document).querySelector(sel); }
@@ -100,7 +102,9 @@
       window[cb] = function(data){ cleanup(); resolve(data); };
       const s = document.createElement('script');
       s.id = cb + '_script';
-      s.src = APP_SCRIPT_URL + '?action=finalistpb&callback=' + cb;
+      // request JSONP via proxy (proxy will fetch the target and return the callback-wrapped JS)
+      const tgt = APP_SCRIPT_URL + '?action=finalistpb&callback=' + cb;
+      s.src = PROXY_URL + '?url=' + encodeURIComponent(tgt) + '&token=' + encodeURIComponent(PROXY_TOKEN);
       s.onerror = function(){ cleanup(); reject(new Error('JSONP load error')); };
       document.head.appendChild(s);
       setTimeout(()=>{ cleanup(); reject(new Error('JSONP timeout')); }, timeout);
@@ -115,7 +119,8 @@
       const params = '&row=' + encodeURIComponent(row) + '&col=' + encodeURIComponent(col) + '&value=' + encodeURIComponent(value);
       const s = document.createElement('script');
       s.id = cb + '_script';
-      s.src = APP_SCRIPT_URL + '?action=update_finalistpb' + params + '&callback=' + cb;
+      const tgt = APP_SCRIPT_URL + '?action=update_finalistpb' + params + '&callback=' + cb;
+      s.src = PROXY_URL + '?url=' + encodeURIComponent(tgt) + '&token=' + encodeURIComponent(PROXY_TOKEN);
       s.onerror = function(){ cleanup(); reject(new Error('JSONP load error')); };
       document.head.appendChild(s);
       setTimeout(()=>{ cleanup(); reject(new Error('JSONP timeout')); }, timeout);

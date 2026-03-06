@@ -2,6 +2,8 @@
 // WARNING: This is a convenience layer for small/private usage. Do not treat as a production-grade auth.
 (function(){
   const APP_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbziJBrE4FKoyol7JqF---uEoq7tPzd292BGHVIIFR5DlO20z6UaB9qCVqW62uN8K_8k/exec';
+  const PROXY_URL = 'https://mabda-proxy.muafakatmabda2026.workers.dev/';
+  const PROXY_TOKEN = 'mynameisvontdeuxthegreat123$';
   const STORAGE_KEY = 'mabda_admin_user';
 
   function isAdmin() { return !!localStorage.getItem(STORAGE_KEY); }
@@ -44,9 +46,10 @@
   function doLogin(user, pass){
     // Primary attempt: POST JSON (preferred). If this fails due to CORS
     // we fall back to a JSONP-style GET (requires the Apps Script to support it).
-    return fetch(APP_SCRIPT_URL, {
+    // POST via proxy to avoid CORS issues on mobile
+    return fetch(PROXY_URL + '?url=' + encodeURIComponent(APP_SCRIPT_URL), {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', 'x-api-key': PROXY_TOKEN },
       body: JSON.stringify({ action: 'login', user: user, pass: pass })
     }).then(r => r.json()).then(data => {
       if(data && data.ok){
@@ -83,7 +86,9 @@
 
       window[cbName] = function(data){ cleanup(); resolve(data); };
 
-      const src = APP_SCRIPT_URL + '?action=login&user=' + encodeURIComponent(user) + '&pass=' + encodeURIComponent(pass) + '&callback=' + cbName;
+      // JSONP via proxy: include the full target URL in the `url` param and pass token as `token` (script can't set headers)
+      const target = APP_SCRIPT_URL + '?action=login&user=' + encodeURIComponent(user) + '&pass=' + encodeURIComponent(pass) + '&callback=' + cbName;
+      const src = PROXY_URL + '?url=' + encodeURIComponent(target) + '&token=' + encodeURIComponent(PROXY_TOKEN);
       const s = document.createElement('script');
       s.src = src;
       s.id = cbName + '_script';
@@ -133,5 +138,5 @@
 
   init();
   // expose API for dedicated login page (include endpoint for debugging)
-  try{ window.mabdaAdmin = { doLogin: doLogin, isAdmin: isAdmin, setAdmin: setAdmin, endpoint: APP_SCRIPT_URL }; }catch(e){}
+  try{ window.mabdaAdmin = { doLogin: doLogin, isAdmin: isAdmin, setAdmin: setAdmin, endpointRaw: APP_SCRIPT_URL, endpointProxy: PROXY_URL }; }catch(e){}
 })();
