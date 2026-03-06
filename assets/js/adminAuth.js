@@ -36,13 +36,15 @@
     if(!user) return;
     const pass = prompt('Password:');
     if(pass === null) return; // cancelled
-    doLogin(user, pass);
+    doLogin(user, pass).then(res => {
+      if(res && res.ok) alert('Login successful'); else alert('Login failed');
+    }).catch(() => { alert('Connection error'); });
   }
 
   function doLogin(user, pass){
     // Primary attempt: POST JSON (preferred). If this fails due to CORS
     // we fall back to a JSONP-style GET (requires the Apps Script to support it).
-    fetch(APP_SCRIPT_URL, {
+    return fetch(APP_SCRIPT_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ action: 'login', user: user, pass: pass })
@@ -50,24 +52,19 @@
       if(data && data.ok){
         setAdmin(user);
         updateUi();
-        alert('Login successful');
-      } else {
-        alert('Login failed');
+        return { ok: true, via: 'post', data };
       }
+      return { ok: false, via: 'post', data };
     }).catch(err => {
       console.error('Primary login failed:', err);
       // Likely a CORS/preflight problem; try JSONP fallback
-      tryJsonpLogin(user, pass).then(data => {
+      return tryJsonpLogin(user, pass).then(data => {
         if(data && data.ok){
           setAdmin(user);
           updateUi();
-          alert('Login successful (via fallback)');
-        } else {
-          alert('Login failed');
+          return { ok: true, via: 'jsonp', data };
         }
-      }).catch(ferr => {
-        console.error('Fallback login failed:', ferr);
-        alert('Connection error. The authentication endpoint blocked the request (CORS).\n\nServer must allow cross-origin requests or support JSONP. See console for details.');
+        return { ok: false, via: 'jsonp', data };
       });
     });
   }
@@ -101,7 +98,7 @@
     // update UI immediately (in case header already injected)
     try { updateUi(); } catch (e) {}
 
-    // delegated click handler so it works regardless of when header is inserted
+    // delegated click handler: redirect to dedicated login page when not logged in
     document.addEventListener('click', function(e){
       const target = e.target;
       if(!target) return;
@@ -110,7 +107,9 @@
         if(isAdmin()){
           if(confirm('Logout admin?')){ setAdmin(null); updateUi(); }
         } else {
-          showPromptLogin();
+          // redirect to login page with return path
+          var next = encodeURIComponent(window.location.pathname + window.location.search + window.location.hash || '');
+          window.location.href = 'admin-login.html?next=' + next;
         }
       }
     });
@@ -130,4 +129,6 @@
   }
 
   init();
+  // expose API for dedicated login page
+  try{ window.mabdaAdmin = { doLogin: doLogin, isAdmin: isAdmin, setAdmin: setAdmin }; }catch(e){}
 })();
