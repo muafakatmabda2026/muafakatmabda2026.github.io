@@ -51,16 +51,27 @@
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'x-api-key': PROXY_TOKEN },
       body: JSON.stringify({ action: 'login', user: user, pass: pass })
-    }).then(r => r.json()).then(data => {
-      if(data && data.ok){
-        setAdmin(user);
-        updateUi();
-        return { ok: true, via: 'post', data };
+    }).then(async r => {
+      const text = await r.text();
+      // if response is not JSON or not OK, surface the body for debugging
+      if(!r.ok){
+        return { ok: false, via: 'proxy', data: { error: 'HTTP ' + r.status + ': ' + (text || r.statusText) } };
       }
-      return { ok: false, via: 'post', data };
+      try{
+        const data = text ? JSON.parse(text) : {};
+        if(data && data.ok){
+          setAdmin(user);
+          updateUi();
+          return { ok: true, via: 'proxy', data };
+        }
+        return { ok: false, via: 'proxy', data };
+      }catch(e){
+        // non-JSON successful response
+        return { ok: false, via: 'proxy', data: { error: 'Non-JSON response: ' + (text && text.slice ? text.slice(0,200) : String(text)) } };
+      }
     }).catch(err => {
       console.error('Primary login failed:', err);
-      // Likely a CORS/preflight problem; try JSONP fallback
+      // network-level error (proxy unreachable etc.) -> try JSONP fallback
       return tryJsonpLogin(user, pass).then(data => {
         if(data && data.ok){
           setAdmin(user);
@@ -68,6 +79,9 @@
           return { ok: true, via: 'jsonp', data };
         }
         return { ok: false, via: 'jsonp', data };
+      }).catch(e => {
+        // JSONP also failed
+        return Promise.reject(e);
       });
     });
   }
