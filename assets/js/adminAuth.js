@@ -1,7 +1,7 @@
 // Simple admin auth integration using provided Apps Script web app
 // WARNING: This is a convenience layer for small/private usage. Do not treat as a production-grade auth.
 (function(){
-  const APP_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbx2fp9FMd_KL0EHzGkjpaAnnYG9NJJW1YINx1NfNUY6NrNu-cqII9ePZP9o00TkzUEp/exec';
+  const APP_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbziJBrE4FKoyol7JqF---uEoq7tPzd292BGHVIIFR5DlO20z6UaB9qCVqW62uN8K_8k/exec';
   const STORAGE_KEY = 'mabda_admin_user';
 
   function isAdmin() { return !!localStorage.getItem(STORAGE_KEY); }
