@@ -132,6 +132,6 @@
   }
 
   init();
-  // expose API for dedicated login page
-  try{ window.mabdaAdmin = { doLogin: doLogin, isAdmin: isAdmin, setAdmin: setAdmin }; }catch(e){}
+  // expose API for dedicated login page (include endpoint for debugging)
+  try{ window.mabdaAdmin = { doLogin: doLogin, isAdmin: isAdmin, setAdmin: setAdmin, endpoint: APP_SCRIPT_URL }; }catch(e){}
 })();

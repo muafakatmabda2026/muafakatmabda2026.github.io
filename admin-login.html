@@ -29,6 +29,7 @@
       </div>
     </form>
     <div id="msg" class="note"></div>
+    <div id="debug-link" style="margin-top:10px;font-size:13px;color:#666"></div>
   </div>
 
   <script src="assets/js/adminAuth.js"></script>
@@ -66,6 +67,19 @@
 
       // if already logged-in, redirect back
       try{ if(window.mabdaAdmin && window.mabdaAdmin.isAdmin && window.mabdaAdmin.isAdmin()){ window.location.href = next; } }catch(e){}
+      // add debug link to open the Apps Script endpoint (helps debug JSONP/script load issues on mobile)
+      try{
+        var dbg = document.getElementById('debug-link');
+        if(window.mabdaAdmin && window.mabdaAdmin.endpoint && dbg){
+          var a = document.createElement('a');
+          a.href = window.mabdaAdmin.endpoint;
+          a.target = '_blank';
+          a.rel = 'noopener';
+          a.textContent = 'Open auth endpoint (debug)';
+          a.style.color = '#0d6efd';
+          dbg.appendChild(a);
+        }
+      }catch(e){}
     })();
   </script>
 </body>
