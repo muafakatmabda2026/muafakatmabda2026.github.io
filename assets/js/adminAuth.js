@@ -43,7 +43,7 @@
     fetch(APP_SCRIPT_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ user: user, pass: pass })
+      body: JSON.stringify({ action: 'login', user: user, pass: pass })
     }).then(r => r.json()).then(data => {
       if(data && data.ok){
         setAdmin(user);
@@ -84,7 +84,7 @@
 
       window[cbName] = function(data){ cleanup(); resolve(data); };
 
-      const src = APP_SCRIPT_URL + '?user=' + encodeURIComponent(user) + '&pass=' + encodeURIComponent(pass) + '&callback=' + cbName;
+      const src = APP_SCRIPT_URL + '?action=login&user=' + encodeURIComponent(user) + '&pass=' + encodeURIComponent(pass) + '&callback=' + cbName;
       const s = document.createElement('script');
       s.src = src;
       s.id = cbName + '_script';
