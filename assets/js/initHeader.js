@@ -41,6 +41,8 @@ function initSiteHeader(container) {
         }
       }
     } catch (e) { /* ignore */ }
+    // notify other scripts that header has been initialized and injected
+    try { document.dispatchEvent(new Event('mabda_header_injected')); } catch (e) {}
   } catch (err) {
     console.warn('initSiteHeader error', err);
   }

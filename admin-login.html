@@ -40,22 +40,22 @@
 
       form.addEventListener('submit', function(e){
         e.preventDefault();
-        msg.textContent = 'Memproses…';
+        msg.textContent = 'Processing...';
         const user = qs('#user').value.trim();
         const pass = qs('#pass').value;
         if(!window.mabdaAdmin || !window.mabdaAdmin.doLogin){
-          msg.textContent = 'Login script belum dimuat. Sila cuba semula.'; return;
+          msg.textContent = 'Login script not yet loaded. Please try again.'; return;
         }
         window.mabdaAdmin.doLogin(user, pass).then(res => {
           if(res && res.ok){
-            msg.textContent = 'Berjaya. Mengalihkan…';
+            msg.textContent = 'Login successful. Redirecting…';
             setTimeout(()=>{ window.location.href = next; }, 400);
           } else {
-            msg.textContent = 'Gagal login. Sila semak kelayakan.';
+            msg.textContent = 'Login failed. Please check your credentials.';
           }
         }).catch(err => {
           console.error(err);
-          msg.textContent = 'Ralat sambungan. Sila semak konsol.';
+          msg.textContent = 'Connection error. Please check the console.';
         });
       });
 

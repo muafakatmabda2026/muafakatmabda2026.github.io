@@ -126,6 +126,9 @@
         }
       }catch(e){}
     });
+
+    // ensure UI updates when header is injected after page load
+    document.addEventListener('mabda_header_injected', () => { try{ updateUi(); }catch(e){} });
   }
 
   init();
