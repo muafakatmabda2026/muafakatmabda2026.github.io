@@ -142,6 +142,8 @@
         }
       });
       window.addEventListener('storage', function(e){ if(e.key === 'mabda_admin_user') refreshIfAuthChanged(); });
+      // listen for explicit auth-change event dispatched by adminAuth
+      document.addEventListener('mabda_auth_changed', refreshIfAuthChanged);
 
       // checkbox handler (delegated)
       container.addEventListener('change', function(e){

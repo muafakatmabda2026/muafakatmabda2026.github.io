@@ -12,6 +12,7 @@
       if(user){ document.body && (document.body.dataset.admin = '1'); }
       else { document.body && delete document.body.dataset.admin; }
     }catch(e){}
+    try{ document.dispatchEvent(new Event('mabda_auth_changed')); }catch(e){}
   }
 
   function updateUi() {
@@ -27,6 +28,7 @@
       adminLogin.textContent = 'Admin Login';
       try{ document.body && delete document.body.dataset.admin; }catch(e){}
     }
+    try{ document.dispatchEvent(new Event('mabda_auth_changed')); }catch(e){}
   }
 
   function showPromptLogin(){
