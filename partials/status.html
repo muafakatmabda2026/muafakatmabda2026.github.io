@@ -1,45 +1,64 @@
-<div class="site-status" style="border:1px solid #e6edf3;background:#f8fbff;padding:12px;border-radius:8px;margin:12px 0;">
+<div class="site-status">
   <style>
-    .status-header { display:flex; align-items:center; gap:10px; }
-    .status-pill { padding:6px 10px; border-radius:999px; color:#fff; font-weight:600; display:inline-block; max-width:40vw; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-    .status-panel { overflow:hidden; max-height:0; transition:max-height 300ms ease; }
-    .status-panel.open { max-height:600px; }
-    .status-list { margin:0; padding:0; list-style:none; display:grid; grid-template-columns:1fr 1fr; gap:6px; }
-    .status-item { display:flex; align-items:center; gap:8px; padding:6px 8px; color:#222; cursor:pointer; border-radius:6px; }
-    .status-item:hover { background:rgba(13,110,253,0.04); }
-    .status-item.active { background:rgba(13,110,253,0.08); }
-    .status-item .dot { width:12px; height:12px; border-radius:50%; display:inline-block; flex:0 0 12px; }
-    .status-desc { margin-top:8px; padding:8px; border-radius:6px; background:#ffffff; border:1px solid #eef3fb; color:#333; display:none; }
+    .site-status { max-width: 550px; background: #ffffff; border-radius: 12px; padding: 20px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08); border: 1px solid #e2e8f0; margin: 12px 0; }
+    
+    .status-header { display: flex; align-items: center; gap: 12px; justify-content: space-between; margin-bottom: 16px; }
+    .status-header strong { font-size: 16px; color: #1e293b; }
+    
+    .status-pill { padding: 8px 16px; border-radius: 999px; color: #fff; font-weight: 600; display: inline-block; font-size: 14px; }
+    
+    .status-toggle { background: none; border: 0; font-weight: 600; cursor: pointer; padding: 6px 12px; font-size: 16px; color: #60a5fa; transition: color 200ms; }
+    .status-toggle:hover { color: #3b82f6; }
+    
+    .status-panel { overflow: hidden; max-height: 0; transition: max-height 300ms ease; }
+    .status-panel.open { max-height: 800px; }
+    
+    .status-list { margin: 12px 0 0 0; padding: 0; list-style: none; position: relative; padding-left: 40px; }
+    
+    /* Vertical progress line */
+    .status-list::before { content: ''; position: absolute; left: 6px; top: 0; bottom: 0; width: 2px; background: linear-gradient(180deg, #cbd5e1 16.66%, #93c5fd 16.66%, #93c5fd 33.33%, #60a5fa 33.33%, #60a5fa 50%, #2dd4bf 50%, #2dd4bf 66.66%, #4ade80 66.66%, #4ade80 83.33%, #16a34a 83.33%); }
+    
+    .status-item { display: flex; align-items: center; gap: 12px; padding: 10px 0; color: #334155; cursor: pointer; border-radius: 6px; margin-left: -40px; padding-left: 40px; transition: background 150ms; position: relative; }
+    .status-item:hover { background: rgba(96, 165, 250, 0.05); }
+    .status-item.active { background: #dbeafe; }
+    .status-item.active { font-weight: 600; color: #1e40af; }
+    
+    .status-item .dot { width: 14px; height: 14px; border-radius: 50%; display: inline-block; flex: 0 0 14px; border: 2px solid #ffffff; box-shadow: 0 0 0 2px currentColor; }
+    
+    .status-desc { margin-top: 16px; padding: 12px; border-radius: 8px; background: #f8fafc; border: 1px solid #e2e8f0; color: #475569; font-size: 14px; line-height: 1.5; display: none; }
+    .status-desc:not(:empty) { display: block; }
 
-    /* Responsive tweaks: make pill smaller on narrow screens */
-    @media (max-width:480px) {
-      .status-pill { max-width:60vw; font-size:13px; padding:4px 8px; }
-      .status-list { grid-template-columns:1fr; }
-    }
-
-    /* Color mapping */
-    .status--survey-not-started { --status-color: #dc3545; } /* merah */
-    .status--survey-finished { --status-color: #6c757d; } /* kelabu */
-    .status--determination { --status-color: #6f42c1; } /* ungu */
-    .status--booking-not-started { --status-color: #0d6efd; } /* biru */
-    .status--booking-open { --status-color: #ffc107; color: #111; } /* kuning */
-    .status--booking-closed { --status-color: #b02a37; } /* gelap merah */
-    .status--list-published { --status-color: #198754; } /* hijau (paling asing) */
+    /* Color mapping (updated palette) */
+    .status--survey-not-started { --status-color: #cbd5e1; }
+    .status--survey-finished { --status-color: #93c5fd; }
+    .status--determination { --status-color: #60a5fa; }
+    .status--booking-not-started { --status-color: #2dd4bf; }
+    .status--booking-open { --status-color: #2dd4bf; }
+    .status--booking-closed { --status-color: #4ade80; }
+    .status--list-published { --status-color: #16a34a; }
 
     .status-pill { background: var(--status-color); }
-    .status-item .dot { background: var(--status-color); }
+    .status-item .dot { color: var(--status-color); }
+
+    /* Responsive tweaks */
+    @media (max-width: 480px) {
+      .site-status { padding: 14px; }
+      .status-list { padding-left: 36px; }
+      .status-item { gap: 10px; }
+    }
   </style>
 
   <div class="status-header">
-    <strong style="font-size:16px;">Status:</strong>
-    <span class="status-pill status--determination">Penentuan Jumlah</span>
-    <button class="status-toggle" aria-label="Maklumat status" title="Maklumat status — tekan untuk tunjukkan/sempulkan" style="margin-left:auto;background:none;border:0;font-weight:600;cursor:pointer;color:#0d6efd;padding:6px;">ℹ️ Info</button>
+    <div>
+      <strong>Status:</strong>
+      <span class="status-pill status--determination">Penentuan Jumlah</span>
+    </div>
+    <button class="status-toggle" aria-label="Maklumat status" title="Maklumat status — tekan untuk tunjukkan/sempulkan">ℹ️ Info</button>
   </div>
 
-  <div style="margin-top:10px;color:#444;font-size:14px;">
-    <div class="status-panel" aria-hidden="true">
-    <div style="margin-bottom:6px;"><strong>Senarai Status:</strong></div>
-      <ul class="status-list">
+  <div class="status-panel" aria-hidden="true">
+    <h3 style="margin: 0 0 12px 0; font-size: 15px; color: #334155; font-weight: 600;">Senarai Status:</h3>
+    <ul class="status-list">
         <li class="status-item status--survey-not-started" data-desc="Survey belum mula dijalankan. Sila isi borang survey apabila dibuka."><span class="dot"></span>Survey Belum Bermula</li>
         <li class="status-item status--survey-finished" data-desc="Survey telah ditutup dan data sedang diproses."><span class="dot"></span>Survey Tamat</li>
         <li class="status-item status--determination" data-desc="Menentukan jumlah bas yang diperlukan berdasarkan keputusan survey."><span class="dot"></span>Penentuan Jumlah Bas</li>
@@ -49,6 +68,5 @@
       </ul>
 
       <div class="status-desc" aria-live="polite"></div>
-    </div>
   </div>
 </div>
