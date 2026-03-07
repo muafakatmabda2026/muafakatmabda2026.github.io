@@ -34,12 +34,15 @@
     /* Loading spinner */
     .loading-spinner{display:inline-block;width:20px;height:20px;border:3px solid #f3f3f3;border-top:3px solid #0b465c;border-radius:50%;animation:spin 1s linear infinite;margin-right:8px;vertical-align:middle}
     @keyframes spin{0%{transform:rotate(0deg)}100%{transform:rotate(360deg)}}
+    /* Notice box */
+    .notice{background:#fff3cd;border-left:4px solid #ffc107;padding:12px 16px;border-radius:6px;margin:12px 0;color:#856404;font-size:14px;font-weight:500}
   </style>
 </head>
 <body data-title="Senarai Pelajar">
   <div id="site-header-placeholder"></div>
   <main class="container">
     <h1>Senarai Pelajar PB Aidilfitri</h1>
+    <div class="notice">⚠️ Data ini adalah data sementara dan khusus untuk tujuan demonstrasi. Pembayaran tiket bas masih belum selesai, oleh itu senarai pelajar ini mungkin akan berubah. Sila semak semula semasa fasa senarai telah dikeluarkan untuk maklumat terbaru.</div>
     <script>
       currentStep = 3; // Penentuan Jumlah Bas (bus allocation stage)
     </script>
