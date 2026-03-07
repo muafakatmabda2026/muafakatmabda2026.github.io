@@ -17,6 +17,15 @@
       max-width: 980px;
       margin: auto;
     }
+    /* Banner carousel styles */
+    .banner-carousel { position: relative; width: 100%; border-radius: 12px; overflow: hidden; margin: 12px 0; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1); aspect-ratio: 16/9; }
+    .banner-slides { position: relative; width: 100%; height: 100%; }
+    .banner-slide { position: absolute; top: 0; left: 0; width: 100%; height: 100%; opacity: 0; transition: opacity 600ms ease-in-out; display: flex; align-items: center; justify-content: center; }
+    .banner-slide.active { opacity: 1; }
+    .banner-slide img { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .banner-nav { position: absolute; bottom: 12px; left: 50%; transform: translateX(-50%); display: flex; gap: 8px; z-index: 10; }
+    .banner-dot { width: 10px; height: 10px; border-radius: 50%; background: rgba(255,255,255,0.6); cursor: pointer; transition: background 300ms; border: 2px solid #fff; }
+    .banner-dot.active { background: rgba(255,255,255,1); }
     h1 {
       text-align: center;
     }
@@ -53,6 +62,49 @@
         .then(r => { if (!r.ok) throw new Error('Header not found'); return r.text(); })
         .then(html => { const node = document.getElementById('site-header-placeholder'); node.innerHTML = html; if (typeof initSiteHeader === 'function') initSiteHeader(node); })
         .catch(() => {});
+    </script>
+
+    <!-- Banner Carousel -->
+    <div class="banner-carousel">
+      <div class="banner-slides">
+        <div class="banner-slide active"><img src="assets/images/banners/bannerImage1.png" alt="Banner 1"/></div>
+        <div class="banner-slide"><img src="assets/images/banners/bannerImage2.png" alt="Banner 2"/></div>
+      </div>
+      <div class="banner-nav">
+        <span class="banner-dot active" data-slide="0"></span>
+        <span class="banner-dot" data-slide="1"></span>
+      </div>
+    </div>
+    <script>
+      (function() {
+        let currentSlide = 0;
+        const slides = document.querySelectorAll('.banner-slide');
+        const dots = document.querySelectorAll('.banner-dot');
+        const totalSlides = slides.length;
+        
+        function showSlide(n) {
+          slides.forEach(s => s.classList.remove('active'));
+          dots.forEach(d => d.classList.remove('active'));
+          slides[n].classList.add('active');
+          dots[n].classList.add('active');
+        }
+        
+        function nextSlide() {
+          currentSlide = (currentSlide + 1) % totalSlides;
+          showSlide(currentSlide);
+        }
+        
+        // Auto rotate every 5 seconds (fade takes 600ms)
+        setInterval(nextSlide, 5000);
+        
+        // Allow manual clicking on dots
+        dots.forEach(dot => {
+          dot.addEventListener('click', () => {
+            currentSlide = parseInt(dot.dataset.slide);
+            showSlide(currentSlide);
+          });
+        });
+      })();
     </script>
 
     <div id="site-status-placeholder"></div>
