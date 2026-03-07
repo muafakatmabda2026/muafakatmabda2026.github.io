@@ -26,11 +26,10 @@
   let rowsData = []; // { sheetRow: number, row: array, map: {header: value} }
   let pitstopCounts = {};
   let busCounts = {};
-  let currentPitstop = 'All';
-  let currentBus = '';
+  let currentFilter = 'All'; // can be 'All', pitstop name, or "bus|busKey"
   let searchTerm = '';
   let pitstopMap = {}; // map pitstop name -> { VolunteerName, VolunteerPhone }
-  let busMap = {}; // map "busNumber|plateNumber" -> { busNumber, plateNumber, displayName, pitstops: [], count }
+  let busMap = {}; // map "busNumber|plateNumber" -> { busNumber, plateNumber, displayName, pitstops: [] }
   function isAdmin(){ return !!localStorage.getItem('mabda_admin_user'); }
 
   function buildRows(rows){
@@ -85,25 +84,27 @@
     const container = qs('#students-container');
     if(!container) return;
     
-    // build pitstop selector
+    // build single selector with both pitstops and buses
     const pitstops = Object.keys(pitstopCounts).sort((a,b) => (a==='All'? -1 : (pitstopCounts[b]-pitstopCounts[a])) );
-    
-    // build bus selector
     const buses = Object.keys(busMap).sort((a, b) => busCounts[b] - busCounts[a]);
     
     let html = '<div class="controls">';
     html += '<select id="pitstop-select">';
-    pitstops.forEach(p => html += '<option value="pitstop|'+escapeHtml(p)+'">'+escapeHtml(p+' ('+pitstopCounts[p]+')')+'</option>');
-    html += '</select>';
     
-    html += '<select id="bus-select">';
-    html += '<option value="">-- Filter by Bus --</option>';
-    buses.forEach(busKey => {
-      const bus = busMap[busKey];
-      html += '<option value="bus|'+escapeHtml(busKey)+'">'+escapeHtml(bus.displayName+' ('+busCounts[busKey]+')')+'</option>';
-    });
-    html += '</select>';
+    // Add pitstops
+    pitstops.forEach(p => html += '<option value="'+escapeHtml(p)+'">'+escapeHtml(p+' ('+pitstopCounts[p]+')')+'</option>');
     
+    // Add buses
+    if(buses.length > 0){
+      html += '<optgroup label="Buses">';
+      buses.forEach(busKey => {
+        const bus = busMap[busKey];
+        html += '<option value="bus|'+escapeHtml(busKey)+'">'+escapeHtml(bus.displayName+' ('+busCounts[busKey]+')')+'</option>';
+      });
+      html += '</optgroup>';
+    }
+    
+    html += '</select>';
     html += '<input id="students-search" placeholder="Cari nama, no maktab atau telefon" />';
     html += '</div>';
     html += '<div id="volunteer-info" style="margin:8px 0;color:#154360;font-weight:600"></div>';
@@ -111,25 +112,10 @@
     container.innerHTML = html;
 
     // set event handlers
-    qs('#pitstop-select').value = 'pitstop|'+currentPitstop;
+    qs('#pitstop-select').value = currentFilter;
     qs('#pitstop-select').addEventListener('change', function(){ 
-      const parts = this.value.split('|');
-      currentPitstop = parts[1] || 'All';
-      currentBus = '';
-      qs('#bus-select').value = '';
+      currentFilter = this.value;
       renderList(); 
-    });
-    
-    qs('#bus-select').addEventListener('change', function(){
-      if(this.value){
-        const parts = this.value.split('|');
-        currentBus = parts[1] || '';
-        currentPitstop = 'All';
-        qs('#pitstop-select').value = 'pitstop|All';
-      } else {
-        currentBus = '';
-      }
-      renderList();
     });
     
     let debounceTimer = 0;
@@ -137,16 +123,18 @@
   }
 
   function matchesFilter(item){
-    // Filter by bus if selected
-    if(currentBus){
+    // Parse current filter
+    if(currentFilter && currentFilter.startsWith('bus|')){
+      // Filter by bus
+      const selectedBusKey = currentFilter.substring(4);
       const busNum = String(item.map['Bus Number'] || '').trim();
       const platNum = String(item.map['Plate Number'] || '').trim();
       const itemBusKey = busNum + '|' + platNum;
-      if(itemBusKey !== currentBus) return false;
-    } else if(currentPitstop && currentPitstop !== 'All'){
-      // Filter by pitstop if no bus is selected
+      if(itemBusKey !== selectedBusKey) return false;
+    } else if(currentFilter && currentFilter !== 'All'){
+      // Filter by pitstop
       const p = String(item.map['PitStop PB'] || item.map['PitStop'] || '').trim();
-      if(p !== currentPitstop) return false;
+      if(p !== currentFilter) return false;
     }
     
     // Filter by search term
@@ -159,17 +147,20 @@
     const listEl = qs('#students-list');
     if(!listEl) return;
     
-    // show volunteer info when a specific pitstop is selected, or bus info when a specific bus is selected
+    // show volunteer info when a pitstop is selected, or bus info when a bus is selected
     const volEl = qs('#volunteer-info');
     if(volEl){
-      if(currentBus && busMap[currentBus]){
+      if(currentFilter && currentFilter.startsWith('bus|')){
         // Show bus details
-        const bus = busMap[currentBus];
-        const pitstopList = bus.pitstops.length > 0 ? bus.pitstops.join(', ') : 'No pitstop info';
-        volEl.innerHTML = 'Bus: ' + escapeHtml(bus.displayName) + ' — PitStops: ' + escapeHtml(pitstopList);
-      } else if(currentPitstop && currentPitstop !== 'All' && pitstopMap[currentPitstop]){
+        const selectedBusKey = currentFilter.substring(4);
+        if(busMap[selectedBusKey]){
+          const bus = busMap[selectedBusKey];
+          const pitstopList = bus.pitstops.length > 0 ? bus.pitstops.join(', ') : 'No pitstop info';
+          volEl.innerHTML = 'Bus: ' + escapeHtml(bus.displayName) + ' — PitStops: ' + escapeHtml(pitstopList);
+        }
+      } else if(currentFilter && currentFilter !== 'All' && pitstopMap[currentFilter]){
         // Show volunteer details
-        const v = pitstopMap[currentPitstop];
+        const v = pitstopMap[currentFilter];
         const name = v.VolunteerName || v.Name || '';
         const phone = v.VolunteerPhone || v.Phone || '';
         if(name || phone){
@@ -205,7 +196,7 @@
       // Build meta line: no • ting • phone • pit (or bus if filtering by bus)
       const metaParts = [no, ting];
       if(phoneHtml) metaParts.push(phoneHtml);
-      if(currentBus && busDisplay){
+      if(currentFilter && currentFilter.startsWith('bus|') && busDisplay){
         metaParts.push(busDisplay);
       } else if(pit){
         metaParts.push(pit);
