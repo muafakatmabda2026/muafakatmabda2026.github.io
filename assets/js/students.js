@@ -155,8 +155,8 @@
         const selectedBusKey = currentFilter.substring(4);
         if(busMap[selectedBusKey]){
           const bus = busMap[selectedBusKey];
-          const pitstopList = bus.pitstops.length > 0 ? bus.pitstops.join(', ') : 'No pitstop info';
-          volEl.innerHTML = 'Bus: ' + escapeHtml(bus.displayName) + ' — PitStops: ' + escapeHtml(pitstopList);
+          const pitstopList = bus.pitstops.length > 0 ? bus.pitstops.join('\n') : 'No pitstop info';
+          volEl.innerHTML = escapeHtml(bus.displayName) + '\n' + escapeHtml(pitstopList);
         }
       } else if(currentFilter && currentFilter !== 'All' && pitstopMap[currentFilter]){
         // Show volunteer details
@@ -193,12 +193,10 @@
       // include checkbox only when admin is logged in
       const phoneHtml = phone ? formatPhoneHtml(phone) : '';
       
-      // Build meta line: no • ting • phone • pit (or bus if filtering by bus)
+      // Build meta line: no • ting • phone • pit
       const metaParts = [no, ting];
       if(phoneHtml) metaParts.push(phoneHtml);
-      if(currentFilter && currentFilter.startsWith('bus|') && busDisplay){
-        metaParts.push(busDisplay);
-      } else if(pit){
+      if(pit){
         metaParts.push(pit);
       }
       const metaHtml = metaParts.join(' • ');
