@@ -54,7 +54,6 @@
   <script src="assets/js/initSiteStatus.js"></script>
   <script src="assets/js/initHeader.js"></script>
   <script src="assets/js/adminAuth.js"></script>
-  <script src="assets/js/payment-config.js"></script>
 </head>
 <body data-title="Mabda Liner">
   <div id="site-header-placeholder"></div>
@@ -145,6 +144,10 @@
           });
           btn.addEventListener('click', function(e){
             if(btn.disabled) return;
+            if(!url){
+              alert('Ralat: URL pembayaran tidak tersedia. Sila muat semula halaman.');
+              return;
+            }
             window.open(url, '_blank', 'noopener');
           });
         })();
@@ -238,7 +241,8 @@
             });
             
             if (found) {
-              showSuccess('✓ No Maktab sahih. Terima kasih!');
+              // Fetch payment URL after successful validation
+              fetchPaymentUrl();
             } else {
               showError('Maaf, anda belum mengisi survei. Kami mengutamakan ibu bapa yang telah mengisi survei untuk membeli tiket terlebih dahulu.');
             }
@@ -266,6 +270,71 @@
           if (window[cb]) {
             cleanup();
             showError('Ralat: Permintaan tamat masa. Sila cuba lagi.');
+          }
+        }, 15000);
+      }
+      
+      // Fetch payment URL after successful validation
+      function fetchPaymentUrl() {
+        const cb = 'paymentUrlCallback_' + Date.now();
+        const cleanup = () => {
+          try { delete window[cb]; } catch(e) {}
+          const s = document.getElementById(cb+'_script');
+          if (s && s.parentNode) s.parentNode.removeChild(s);
+        };
+        
+        window[cb] = function(data) {
+          try {
+            if (data && data.url) {
+              // Success - store URL and show success message
+              const orderBtn = document.getElementById('order-btn');
+              if (orderBtn) {
+                // Replace the inline PAYMENT_URL with the fetched URL
+                // Get the previous click listener's parent script and update
+                const paymentUrl = data.url;
+                // Find the script block that handles order button and update it
+                // Actually, we'll use a simpler approach: set a global and update the onclick
+                window.mabdaPaymentUrl = paymentUrl;
+                const orderBtnParent = orderBtn.closest('.agreement');
+                if (orderBtnParent) {
+                  const scripts = orderBtnParent.querySelectorAll('script');
+                  scripts.forEach(s => {
+                    if (s.textContent.includes('PAYMENT_URL')) {
+                      // Re-execute the script with the new URL available
+                      const newScript = document.createElement('script');
+                      newScript.textContent = 'var PAYMENT_URL = window.mabdaPaymentUrl || "' + paymentUrl + '";' + s.textContent;
+                      s.parentNode.replaceChild(newScript, s);
+                    }
+                  });
+                }
+              }
+              showSuccess('✓ No Maktab sahih. Terima kasih!');
+            } else {
+              showError('Ralat: Tidak dapat dapatkan URL pembayaran. Sila cuba lagi.');
+            }
+          } catch (err) {
+            console.error('Payment URL fetch error:', err);
+            showError('Ralat: Tidak dapat dapatkan URL pembayaran. Sila cuba lagi.');
+          } finally {
+            cleanup();
+          }
+        };
+        
+        const s = document.createElement('script');
+        s.id = cb + '_script';
+        const tgt = APP_SCRIPT_URL + '?action=payment_url&callback=' + cb;
+        s.src = PROXY_URL + '?url=' + encodeURIComponent(tgt) + '&token=' + encodeURIComponent(PROXY_TOKEN);
+        s.onerror = function() {
+          showError('Ralat: Tidak dapat dapatkan URL pembayaran. Sila cuba lagi.');
+          cleanup();
+        };
+        document.head.appendChild(s);
+        
+        // 15 second timeout
+        setTimeout(() => {
+          if (window[cb]) {
+            cleanup();
+            showError('Ralat: Permintaan dapatkan URL tamat masa. Sila cuba lagi.');
           }
         }, 15000);
       }
