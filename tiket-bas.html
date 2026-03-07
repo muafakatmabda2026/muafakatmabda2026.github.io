@@ -45,6 +45,9 @@
 
   <div id="site-status-placeholder"></div>
   <script>
+    currentStep = 4; // Tempahan Tiket Bermula (booking stage)
+  </script>
+  <script>
     fetch('partials/status.html')
       .then(r => { if (!r.ok) throw new Error('Status not found'); return r.text(); })
       .then(html => {

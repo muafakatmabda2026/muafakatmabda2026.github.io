@@ -1,3 +1,48 @@
+// Shared status steps and global current step
+const statusSteps = [
+  { name: 'Survey Belum Bermula', color: '#cbd5e1' },
+  { name: 'Survey Tamat', color: '#93c5fd' },
+  { name: 'Penentuan Jumlah Bas', color: '#60a5fa' },
+  { name: 'Tempahan Tiket Bermula', color: '#2dd4bf' },
+  { name: 'Tempahan Tiket Tamat', color: '#4ade80' },
+  { name: 'Senarai Nama Pelajar Dikeluarkan', color: '#16a34a' }
+];
+
+// GLOBAL: Change this value on any page to update the status across the site
+let currentStep = 3; // Default: Penentuan Jumlah Bas
+
+// Global function to update status panel based on currentStep
+function updateStatusPanel(container) {
+  try {
+    const statusItems = container.querySelectorAll('.status-item');
+    const statusPill = container.querySelector('.status-pill');
+    const statusDesc = container.querySelector('.status-desc');
+    
+    if (!statusItems.length || !statusPill) return;
+    
+    const currentStatus = statusSteps[currentStep - 1];
+    
+    // Update pill text to current step
+    statusPill.textContent = currentStatus.name;
+    
+    // Reset and update status items
+    statusItems.forEach((item, idx) => {
+      item.classList.remove('active');
+      // Mark current step as active
+      if (idx === currentStep - 1) {
+        item.classList.add('active');
+        // Update description
+        if (statusDesc) {
+          statusDesc.textContent = item.getAttribute('data-desc') || '';
+          statusDesc.style.display = statusDesc.textContent ? 'block' : 'none';
+        }
+      }
+    });
+  } catch (err) {
+    console.warn('updateStatusPanel error', err);
+  }
+}
+
 // Shared initialization for the status partial.
 // Call: initSiteStatus(containerElement)
 function initSiteStatus(container) {
@@ -52,6 +97,9 @@ function initSiteStatus(container) {
     const preActive = items.find(i => i.classList.contains('active'));
     if (preActive) initial = preActive;
     selectItem(initial);
+    
+    // Apply global currentStep (if defined)
+    updateStatusPanel(container);
   } catch (err) {
     console.warn('initSiteStatus error', err);
   }
