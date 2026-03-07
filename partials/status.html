@@ -13,12 +13,12 @@
     .status-panel { overflow: hidden; max-height: 0; transition: max-height 300ms ease; }
     .status-panel.open { max-height: 800px; }
     
-    .status-list { margin: 12px 0 0 0; padding: 0; list-style: none; position: relative; padding-left: 40px; }
+    .status-list { margin: 12px 0 0 0; padding: 0; list-style: none; position: relative; padding-left: 50px; }
     
     /* Vertical progress line */
-    .status-list::before { content: ''; position: absolute; left: 0px; top: 0; bottom: 0; width: 12px; background: linear-gradient(180deg, #cbd5e1 16.66%, #93c5fd 16.66%, #93c5fd 33.33%, #60a5fa 33.33%, #60a5fa 50%, #2dd4bf 50%, #2dd4bf 66.66%, #4ade80 66.66%, #4ade80 83.33%, #16a34a 83.33%); border-radius: 6px 0 0 6px; }
+    .status-list::before { content: ''; position: absolute; left: 0px; top: 0; bottom: 0; width: 24px; background: linear-gradient(180deg, #cbd5e1 16.66%, #93c5fd 16.66%, #93c5fd 33.33%, #60a5fa 33.33%, #60a5fa 50%, #2dd4bf 50%, #2dd4bf 66.66%, #4ade80 66.66%, #4ade80 83.33%, #16a34a 83.33%); border-radius: 12px 0 0 12px; display: block; }
     
-    .status-item { display: flex; align-items: center; gap: 12px; padding: 10px 0; color: #334155; cursor: pointer; border-radius: 6px; margin-left: -40px; padding-left: 40px; transition: background 150ms; position: relative; }
+    .status-item { display: flex; align-items: center; gap: 12px; padding: 10px 0; color: #334155; cursor: pointer; border-radius: 6px; margin-left: -50px; padding-left: 50px; transition: background 150ms; position: relative; }
     .status-item:hover { background: rgba(96, 165, 250, 0.05); }
     .status-item.active { background: #dbeafe; }
     .status-item.active { font-weight: 600; color: #1e40af; }
@@ -43,8 +43,8 @@
     /* Responsive tweaks */
     @media (max-width: 480px) {
       .site-status { padding: 14px; }
-      .status-list { padding-left: 36px; }
-      .status-item { gap: 10px; }
+      .status-list { padding-left: 44px; }
+      .status-item { margin-left: -44px; padding-left: 44px; gap: 10px; }
     }
   </style>
 
