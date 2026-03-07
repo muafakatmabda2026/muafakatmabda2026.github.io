@@ -3,9 +3,40 @@
   const APP_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbziJBrE4FKoyol7JqF---uEoq7tPzd292BGHVIIFR5DlO20z6UaB9qCVqW62uN8K_8k/exec';
   const PROXY_URL = 'https://mabda-proxy.muafakatmabda2026.workers.dev/';
   const PROXY_TOKEN = 'mynameisvontdeuxthegreat123$';
+  const CACHE_TTL = 3600000; // 1 hour
+  const PITSTOPS_CACHE_KEY = 'mabda_pitstops_cache';
+  const FINALISTS_CACHE_KEY = 'mabda_finalists_cache';
 
   function escapeHtml(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
   function qs(sel, ctx){ return (ctx || document).querySelector(sel); }
+
+  // Cache utility functions
+  function setCacheItem(key, data){
+    try{
+      const item = { data, expiry: Date.now() + CACHE_TTL };
+      localStorage.setItem(key, JSON.stringify(item));
+    } catch(e){}
+  }
+
+  function getCacheItem(key){
+    try{
+      const item = JSON.parse(localStorage.getItem(key) || '{}');
+      if(item.expiry && item.expiry > Date.now()) return item.data;
+      localStorage.removeItem(key);
+    } catch(e){}
+    return null;
+  }
+
+  // Public cache clear function for admin
+  window.clearMabdaStudentsCache = function(){
+    try{
+      localStorage.removeItem(PITSTOPS_CACHE_KEY);
+      localStorage.removeItem(FINALISTS_CACHE_KEY);
+      alert('Cache cleared. Refresh the page to load fresh data.');
+    } catch(e){
+      alert('Error clearing cache');
+    }
+  };
 
   function formatPhoneHtml(phone){
     if(!phone) return '';
@@ -266,9 +297,21 @@
 
   document.addEventListener('DOMContentLoaded', function(){
     const container = document.getElementById('students-container');
-    if(container) container.innerHTML = '<p>Memuatkan data…</p>';
+    if(container) container.innerHTML = '<div class="loading-spinner"></div><p>Memuatkan data…</p>';
+    
+    // Try to load from cache first
+    let pitstopsPromise = Promise.resolve(getCacheItem(PITSTOPS_CACHE_KEY)).then(cached => {
+      if(cached) return cached;
+      return jsonpFetchPitstops().then(data => { setCacheItem(PITSTOPS_CACHE_KEY, data); return data; });
+    });
+    
+    let finalistsPromise = Promise.resolve(getCacheItem(FINALISTS_CACHE_KEY)).then(cached => {
+      if(cached) return cached;
+      return jsonpFetchFinalist().then(data => { setCacheItem(FINALISTS_CACHE_KEY, data); return data; });
+    });
+    
     // fetch pitstops first, then the finalists
-    jsonpFetchPitstops().then(pres => {
+    pitstopsPromise.then(pres => {
       const prot = Array.isArray(pres) ? pres : (pres && pres.rows) || [];
       if(prot && prot.length > 1){
         // build pitstopMap from rows: assume first column is PitStop, second VolunteerName, third VolunteerPhone
@@ -281,12 +324,20 @@
           pitstopMap[key] = { VolunteerName: r[volNameIdx]||'', VolunteerPhone: r[volPhoneIdx]||'' };
         });
       }
-      return jsonpFetchFinalist();
+      return finalistsPromise;
     }).then(result => {
       const rows = Array.isArray(result) ? result : (result && result.rows) || [];
       if(!rows || rows.length === 0) return renderControls();
       buildRows(rows);
       renderControls();
+      
+      // Force select first pitstop (not "All")
+      const allPitstops = Object.keys(pitstopCounts).filter(p => p !== 'All').sort((a,b) => (pitstopCounts[b]-pitstopCounts[a]));
+      if(allPitstops.length > 0){
+        currentFilter = allPitstops[0];
+        qs('#pitstop-select').value = currentFilter;
+      }
+      
       renderList();
 
       // Re-render list when login state changes so checkboxes appear only after login

@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>Admin - Mabda</title>
   <link rel="icon" href="/assets/images/favicon.ico">
-  <style>body{font-family:Arial, sans-serif;padding:20px} .note{background:#fff3cd;padding:12px;border-left:4px solid #ffe08a;border-radius:6px}</style>
+  <style>body{font-family:Arial, sans-serif;padding:20px} .note{background:#fff3cd;padding:12px;border-left:4px solid #ffe08a;border-radius:6px} .admin-action-btn{display:inline-block;padding:10px 16px;margin:8px 8px 8px 0;border:none;border-radius:6px;cursor:pointer;font-size:14px;font-weight:600} .btn-danger{background:#e74c3c;color:white} .btn-danger:hover{background:#c0392b} .btn-success{background:#27ae60;color:white} .btn-success:hover{background:#229954}</style>
   <script src="assets/js/initHeader.js"></script>
   <script src="assets/js/adminAuth.js"></script>
 </head>
@@ -22,9 +22,24 @@
     <h1>Admin Kawalan</h1>
     <div class="note">Halaman ini tersedia hanya untuk admin yang telah log masuk melalui butang "Admin Login".</div>
 
-    <p>Contoh tindakan admin boleh diletakkan di sini (urus senarai admin, lihat log, eksport).</p>
+    <h2 style="margin-top:2rem">Tindakan Admin</h2>
+    <button id="clear-students-cache-btn" class="admin-action-btn btn-danger">Clear Student Cache</button>
+    
+    <p style="margin-top:2rem;color:#666;font-size:14px"><em>Contoh tindakan admin boleh diletakkan di sini (urus senarai admin, lihat log, eksport).</em></p>
   </main>
 
   <div id="site-footer-placeholder"></div>
+  <script src="assets/js/students.js"></script>
+  <script>
+    // Cache clear button
+    const clearCacheBtn = document.getElementById('clear-students-cache-btn');
+    if(clearCacheBtn){
+      clearCacheBtn.addEventListener('click', function(){
+        if(typeof clearMabdaStudentsCache === 'function'){
+          clearMabdaStudentsCache();
+        }
+      });
+    }
+  </script>
 </body>
 </html>
