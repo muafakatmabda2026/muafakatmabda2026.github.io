@@ -38,6 +38,35 @@
     }
   };
 
+  // Cache version checking for global invalidation
+  const CACHE_VERSION_KEY = 'mabda_cache_version';
+  const CACHE_VERSION_URL = '/cache-version.txt';
+  
+  function checkAndValidateCache(){
+    return fetch(CACHE_VERSION_URL)
+      .then(r => r.text())
+      .then(version => {
+        const storedVersion = localStorage.getItem(CACHE_VERSION_KEY);
+        const currentVersion = version.trim();
+        if(storedVersion !== currentVersion){
+          // Version changed - clear old cache
+          try{
+            localStorage.removeItem(PITSTOPS_CACHE_KEY);
+            localStorage.removeItem(FINALISTS_CACHE_KEY);
+            localStorage.setItem(CACHE_VERSION_KEY, currentVersion);
+            console.log('Cache invalidated: version changed from ' + storedVersion + ' to ' + currentVersion);
+          } catch(e){}
+        } else {
+          // Version matches - cache is valid
+          localStorage.setItem(CACHE_VERSION_KEY, currentVersion);
+        }
+      })
+      .catch(err => {
+        // If fetch fails, just continue with existing cache
+        console.warn('Could not check cache version', err);
+      });
+  }
+
   function formatPhoneHtml(phone){
     if(!phone) return '';
     const raw = String(phone || '').trim();
@@ -299,16 +328,18 @@
     const container = document.getElementById('students-container');
     if(container) container.innerHTML = '<div class="loading-spinner"></div><p>Memuatkan data…</p>';
     
-    // Try to load from cache first
-    let pitstopsPromise = Promise.resolve(getCacheItem(PITSTOPS_CACHE_KEY)).then(cached => {
-      if(cached) return cached;
-      return jsonpFetchPitstops().then(data => { setCacheItem(PITSTOPS_CACHE_KEY, data); return data; });
-    });
-    
-    let finalistsPromise = Promise.resolve(getCacheItem(FINALISTS_CACHE_KEY)).then(cached => {
-      if(cached) return cached;
-      return jsonpFetchFinalist().then(data => { setCacheItem(FINALISTS_CACHE_KEY, data); return data; });
-    });
+    // Check cache version first, then load data
+    checkAndValidateCache().then(() => {
+      // Try to load from cache first
+      let pitstopsPromise = Promise.resolve(getCacheItem(PITSTOPS_CACHE_KEY)).then(cached => {
+        if(cached) return cached;
+        return jsonpFetchPitstops().then(data => { setCacheItem(PITSTOPS_CACHE_KEY, data); return data; });
+      });
+      
+      let finalistsPromise = Promise.resolve(getCacheItem(FINALISTS_CACHE_KEY)).then(cached => {
+        if(cached) return cached;
+        return jsonpFetchFinalist().then(data => { setCacheItem(FINALISTS_CACHE_KEY, data); return data; });
+      });
     
     // fetch pitstops first, then the finalists
     pitstopsPromise.then(pres => {
@@ -368,6 +399,9 @@
     }).catch(err => {
       console.error('students load error', err);
       if(container) container.innerHTML = '<p>Gagal memuat data. Lihat konsol.</p>';
+    });
+    }).catch(err => {
+      console.error('Cache version check failed, continuing with data load', err);
     });
   });
 
