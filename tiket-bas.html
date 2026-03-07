@@ -65,21 +65,6 @@
       .catch(() => {});
   </script>
 
-  <div id="site-status-placeholder"></div>
-  <script>
-    currentStep = 3; // Penentuan Jumlah Bas (bus allocation stage) - set this to update the status bar on this page
-  </script>
-  <script>
-    fetch('partials/status.html')
-      .then(r => { if (!r.ok) throw new Error('Status not found'); return r.text(); })
-      .then(html => {
-        const node = document.getElementById('site-status-placeholder');
-        node.innerHTML = html;
-        if (typeof initSiteStatus === 'function') initSiteStatus(node);
-      })
-      .catch(() => {});
-  </script>
-
   <!-- Validation Modal for Tempah Tiket -->
   <div id="validation-modal" class="modal active">
     <div class="modal-content">
@@ -171,6 +156,10 @@
   <!-- Validation JavaScript -->
   <script>
     (function() {
+      const APP_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbziJBrE4FKoyol7JqF---uEoq7tPzd292BGHVIIFR5DlO20z6UaB9qCVqW62uN8K_8k/exec';
+      const PROXY_URL = 'https://mabda-proxy.muafakatmabda2026.workers.dev/';
+      const PROXY_TOKEN = 'mynameisvontdeuxthegreat123$';
+      
       const modal = document.getElementById('validation-modal');
       const input = document.getElementById('no-maktab-input');
       const submitBtn = document.getElementById('modal-submit-btn');
@@ -216,7 +205,7 @@
         }, 1000);
       }
       
-      // Fetch and validate No Maktab from "Processed" tab via Google Apps Script JSONP
+      // Fetch and validate No Maktab from "Processed" tab via Google Apps Script JSONP with proxy
       function validateNoMaktab(noMaktab) {
         if (!noMaktab || noMaktab.trim() === '') {
           showError('Sila masukkan No Maktab.');
@@ -226,19 +215,24 @@
         showLoading(true);
         const normalizedInput = noMaktab.trim().toUpperCase();
         
-        // Google Apps Script JSONP endpoint
-        const gscriptUrl = 'https://script.google.com/macros/d/1wjLbSfLdKOAqb7YG-VhVHaZmrI-0kZlEh_hCYRW5Uo8/usercache?action=processed';
-        const callbackName = 'processedDataCallback_' + Date.now();
+        // JSONP call via proxy (same pattern as students.js)
+        const cb = 'processedDataCallback_' + Date.now();
+        const cleanup = () => {
+          try { delete window[cb]; } catch(e) {}
+          const s = document.getElementById(cb+'_script');
+          if (s && s.parentNode) s.parentNode.removeChild(s);
+        };
         
-        window[callbackName] = function(data) {
+        window[cb] = function(data) {
           try {
-            if (!data || !data.values || !Array.isArray(data.values)) {
+            const rows = Array.isArray(data) ? data : (data && data.rows) || [];
+            if (!rows || rows.length === 0) {
               showError('Ralat: No data retrieved. Sila cuba lagi.');
               return;
             }
             
-            // Search for No Maktab in the data (column 3, index 3)
-            const found = data.values.some(row => {
+            // Search for No Maktab in the data (column 3, index 3 in Processed sheet)
+            const found = rows.some(row => {
               if (!row || !row[3]) return false;
               return row[3].toString().trim().toUpperCase() === normalizedInput;
             });
@@ -249,26 +243,31 @@
               showError('Maaf, anda belum mengisi survei. Kami mengutamakan ibu bapa yang telah mengisi survei untuk membeli tiket terlebih dahulu.');
             }
           } catch (err) {
+            console.error('Validation error:', err);
             showError('Ralat semasa memproses data. Sila cuba lagi.');
           } finally {
-            delete window[callbackName];
+            cleanup();
           }
         };
         
-        // Create script tag for JSONP
-        const script = document.createElement('script');
-        script.src = gscriptUrl + '&callback=' + callbackName;
-        script.onerror = function() {
+        // Create script tag for JSONP via proxy
+        const s = document.createElement('script');
+        s.id = cb + '_script';
+        const tgt = APP_SCRIPT_URL + '?action=processed&callback=' + cb;
+        s.src = PROXY_URL + '?url=' + encodeURIComponent(tgt) + '&token=' + encodeURIComponent(PROXY_TOKEN);
+        s.onerror = function() {
           showError('Ralat: Tidak dapat terhubung dengan server. Sila cuba lagi.');
-          delete window[callbackName];
+          cleanup();
         };
-        document.head.appendChild(script);
+        document.head.appendChild(s);
+        
+        // 15 second timeout
         setTimeout(() => {
-          if (window[callbackName]) {
-            delete window[callbackName];
+          if (window[cb]) {
+            cleanup();
             showError('Ralat: Permintaan tamat masa. Sila cuba lagi.');
           }
-        }, 15000); // 15 second timeout
+        }, 15000);
       }
       
       // Event handlers
