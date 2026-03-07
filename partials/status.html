@@ -1,76 +1,54 @@
-<div class="site-status">
+<div class="site-status" style="border:1px solid #e6edf3;background:#f8fbff;padding:12px;border-radius:8px;margin:12px 0;">
   <style>
-    .status-card { width:100%; max-width:520px; background:#fff; border-radius:12px; padding:18px; box-shadow:0 6px 18px rgba(15,23,42,0.06); border:1px solid #eef4fb; box-sizing:border-box; }
-    .status-card .card-header { display:flex; justify-content:space-between; align-items:center; gap:12px; }
-    .status-card .header-left { display:flex; align-items:center; gap:12px; }
-    .status-card .status-label { font-size:16px; font-weight:700; color:#111827; }
-    .status-card .pill-tag { background:#7C3AED; color:#fff; padding:6px 14px; border-radius:999px; font-size:14px; font-weight:600; display:inline-block; }
-    .status-card .info-group { display:flex; align-items:center; gap:6px; color:#2563EB; font-size:14px; cursor:pointer; }
+    .status-header { display:flex; align-items:center; gap:10px; }
+    .status-pill { padding:6px 10px; border-radius:999px; color:#fff; font-weight:600; display:inline-block; max-width:40vw; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .status-panel { overflow:hidden; max-height:0; transition:max-height 300ms ease; }
+    .status-panel.open { max-height:600px; }
+    .status-list { margin:0; padding:0; list-style:none; display:grid; grid-template-columns:1fr 1fr; gap:6px; }
+    .status-item { display:flex; align-items:center; gap:8px; padding:6px 8px; color:#222; cursor:pointer; border-radius:6px; }
+    .status-item:hover { background:rgba(13,110,253,0.04); }
+    .status-item.active { background:rgba(13,110,253,0.08); }
+    .status-item .dot { width:12px; height:12px; border-radius:50%; display:inline-block; flex:0 0 12px; }
+    .status-desc { margin-top:8px; padding:8px; border-radius:6px; background:#ffffff; border:1px solid #eef3fb; color:#333; display:none; }
 
-    .status-card .senarai-title { font-size:15px; color:#374151; margin:14px 0 10px; font-weight:600; }
-
-    .status-list { list-style:none; padding:0; margin:0; }
-    .status-item { display:flex; align-items:center; gap:14px; padding:10px 0; color:#111827; }
-    .status-item .status-dot { width:14px; height:14px; border-radius:50%; display:inline-block; flex:0 0 14px; }
-    .status-item.current-status { background:#EAF0FF; margin:0 -18px; padding:10px 18px; border-radius:8px; }
-    .status-item.current-status .item-text { font-weight:700; }
-
-    .dot-red { background:#D0342C; }
-    .dot-grey { background:#808080; }
-    .dot-purple { background:#7C3AED; }
-    .dot-yellow { background:#F4BF21; }
-    .dot-green { background:#1A9D57; }
-
-    .item-text { font-size:15px; }
-
-    .description-box { margin-top:16px; background:#fcfcff; border:1px solid #eef3fb; border-radius:8px; padding:12px; color:#374151; font-size:14px; }
-
-    @media (max-width:520px) {
-      .status-card { padding:14px; }
-      .status-item { gap:10px; }
+    /* Responsive tweaks: make pill smaller on narrow screens */
+    @media (max-width:480px) {
+      .status-pill { max-width:60vw; font-size:13px; padding:4px 8px; }
+      .status-list { grid-template-columns:1fr; }
     }
+
+    /* Color mapping */
+    .status--survey-not-started { --status-color: #dc3545; } /* merah */
+    .status--survey-finished { --status-color: #6c757d; } /* kelabu */
+    .status--determination { --status-color: #6f42c1; } /* ungu */
+    .status--booking-not-started { --status-color: #0d6efd; } /* biru */
+    .status--booking-open { --status-color: #ffc107; color: #111; } /* kuning */
+    .status--booking-closed { --status-color: #b02a37; } /* gelap merah */
+    .status--list-published { --status-color: #198754; } /* hijau (paling asing) */
+
+    .status-pill { background: var(--status-color); }
+    .status-item .dot { background: var(--status-color); }
   </style>
 
-  <div class="status-card">
-    <div class="card-header">
-      <div class="header-left">
-        <span class="status-label">Status:</span>
-        <span class="pill-tag">Penentuan Jumlah</span>
-      </div>
-      <div class="header-right info-group" role="button" tabindex="0" aria-label="Maklumat status">
-        <span class="info-icon">ⓘ</span>
-        <span class="info-text">Info</span>
-      </div>
-    </div>
-
-    <h3 class="senarai-title">Senarai Status:</h3>
-
-    <ul class="status-list">
-      <li class="status-item" data-desc="Survey belum mula dijalankan. Sila isi borang survey apabila dibuka."><span class="status-dot dot-grey"></span><span class="item-text">Survey Belum Bermula</span></li>
-      <li class="status-item" data-desc="Survey telah ditutup dan data sedang diproses."><span class="status-dot dot-grey"></span><span class="item-text">Survey Tamat</span></li>
-      <li class="status-item current-status" data-desc="Menentukan jumlah bas yang diperlukan berdasarkan keputusan survey."><span class="status-dot dot-purple"></span><span class="item-text">Penentuan Jumlah Bas</span></li>
-      <li class="status-item" data-desc="Tempahan tiket sedang berlangsung. Sila semak maklumat pelajar sebelum pembayaran."><span class="status-dot dot-yellow"></span><span class="item-text">Tempahan Tiket Bermula</span></li>
-      <li class="status-item" data-desc="Tempahan dalam tempoh ini ditutup. Hubungi pengurusan jika kecemasan."><span class="status-dot dot-red"></span><span class="item-text">Tempahan Tiket Tamat</span></li>
-      <li class="status-item" data-desc="Senarai nama pelajar telah dikeluarkan. Sila semak senarai untuk pengesahan tempat."><span class="status-dot dot-green"></span><span class="item-text">Senarai Nama Pelajar Dikeluarkan</span></li>
-    </ul>
-
-    <div class="description-box" aria-live="polite">Menentukan jumlah bas yang diperlukan berdasarkan keputusan survey.</div>
+  <div class="status-header">
+    <strong style="font-size:16px;">Status:</strong>
+    <span class="status-pill status--determination">Penentuan Jumlah</span>
+    <button class="status-toggle" aria-label="Maklumat status" title="Maklumat status — tekan untuk tunjukkan/sempulkan" style="margin-left:auto;background:none;border:0;font-weight:600;cursor:pointer;color:#0d6efd;padding:6px;">ℹ️ Info</button>
   </div>
 
-  <script>
-    (function(){
-      const panel = document.currentScript.previousElementSibling.querySelector('.status-card');
-      const items = panel.querySelectorAll('.status-item');
-      const desc = panel.querySelector('.description-box');
-      items.forEach(item => {
-        item.addEventListener('click', () => {
-          const d = item.getAttribute('data-desc') || '';
-          desc.textContent = d;
-          items.forEach(i=>i.classList.remove('current-status'));
-          item.classList.add('current-status');
-        });
-        item.addEventListener('keydown', e => { if(e.key === 'Enter'){ item.click(); } });
-      });
-    })();
-  </script>
+  <div style="margin-top:10px;color:#444;font-size:14px;">
+    <div class="status-panel" aria-hidden="true">
+    <div style="margin-bottom:6px;"><strong>Senarai Status:</strong></div>
+      <ul class="status-list">
+        <li class="status-item status--survey-not-started" data-desc="Survey belum mula dijalankan. Sila isi borang survey apabila dibuka."><span class="dot"></span>Survey Belum Bermula</li>
+        <li class="status-item status--survey-finished" data-desc="Survey telah ditutup dan data sedang diproses."><span class="dot"></span>Survey Tamat</li>
+        <li class="status-item status--determination" data-desc="Menentukan jumlah bas yang diperlukan berdasarkan keputusan survey."><span class="dot"></span>Penentuan Jumlah Bas</li>
+        <li class="status-item status--booking-open" data-desc="Tempahan tiket sedang berlangsung. Sila semak maklumat pelajar sebelum pembayaran."><span class="dot"></span>Tempahan Tiket Bermula</li>
+        <li class="status-item status--booking-closed" data-desc="Tempahan dalam tempoh ini ditutup. Hubungi pengurusan jika kecemasan."><span class="dot"></span>Tempahan Tiket Tamat</li>
+        <li class="status-item status--list-published" data-desc="Senarai nama pelajar telah dikeluarkan. Sila semak senarai untuk pengesahan tempat."><span class="dot"></span>Senarai Nama Pelajar Dikeluarkan</li>
+      </ul>
+
+      <div class="status-desc" aria-live="polite"></div>
+    </div>
+  </div>
 </div>
