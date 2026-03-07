@@ -25,9 +25,12 @@
   let headers = [];
   let rowsData = []; // { sheetRow: number, row: array, map: {header: value} }
   let pitstopCounts = {};
+  let busCounts = {};
   let currentPitstop = 'All';
+  let currentBus = '';
   let searchTerm = '';
   let pitstopMap = {}; // map pitstop name -> { VolunteerName, VolunteerPhone }
+  let busMap = {}; // map "busNumber|plateNumber" -> { busNumber, plateNumber, displayName, pitstops: [], count }
   function isAdmin(){ return !!localStorage.getItem('mabda_admin_user'); }
 
   function buildRows(rows){
@@ -37,6 +40,7 @@
       headers.forEach((h, idx) => map[h] = r[idx]);
       return { sheetRow: i + 2, row: r, map };
     });
+    
     // build pitstop counts
     pitstopCounts = { 'All': rowsData.length };
     rowsData.forEach(r => {
@@ -44,17 +48,62 @@
       if(!p) return;
       pitstopCounts[p] = (pitstopCounts[p] || 0) + 1;
     });
+    
+    // build bus counts and busMap
+    busCounts = {};
+    busMap = {};
+    rowsData.forEach(r => {
+      const busNum = String(r.map['Bus Number'] || '').trim();
+      const platNum = String(r.map['Plate Number'] || '').trim();
+      const pitstop = String(r.map['PitStop PB'] || r.map['PitStop'] || '').trim();
+      
+      if(!busNum || !platNum) return;
+      
+      const busKey = busNum + '|' + platNum;
+      const busDisplay = 'Bus ' + busNum + ' - ' + platNum.toUpperCase();
+      
+      if(!busMap[busKey]){
+        busMap[busKey] = {
+          busNumber: busNum,
+          plateNumber: platNum,
+          displayName: busDisplay,
+          pitstops: new Set()
+        };
+      }
+      
+      busCounts[busKey] = (busCounts[busKey] || 0) + 1;
+      if(pitstop) busMap[busKey].pitstops.add(pitstop);
+    });
+    
+    // convert pitstops Set to Array for display
+    Object.keys(busMap).forEach(key => {
+      busMap[key].pitstops = Array.from(busMap[key].pitstops);
+    });
   }
 
   function renderControls(){
     const container = qs('#students-container');
     if(!container) return;
-    // build selector options
+    
+    // build pitstop selector
     const pitstops = Object.keys(pitstopCounts).sort((a,b) => (a==='All'? -1 : (pitstopCounts[b]-pitstopCounts[a])) );
+    
+    // build bus selector
+    const buses = Object.keys(busMap).sort((a, b) => busCounts[b] - busCounts[a]);
+    
     let html = '<div class="controls">';
     html += '<select id="pitstop-select">';
-    pitstops.forEach(p => html += '<option value="'+escapeHtml(p)+'">'+escapeHtml(p+' ('+pitstopCounts[p]+')')+'</option>');
+    pitstops.forEach(p => html += '<option value="pitstop|'+escapeHtml(p)+'">'+escapeHtml(p+' ('+pitstopCounts[p]+')')+'</option>');
     html += '</select>';
+    
+    html += '<select id="bus-select">';
+    html += '<option value="">-- Filter by Bus --</option>';
+    buses.forEach(busKey => {
+      const bus = busMap[busKey];
+      html += '<option value="bus|'+escapeHtml(busKey)+'">'+escapeHtml(bus.displayName+' ('+busCounts[busKey]+')')+'</option>';
+    });
+    html += '</select>';
+    
     html += '<input id="students-search" placeholder="Cari nama, no maktab atau telefon" />';
     html += '</div>';
     html += '<div id="volunteer-info" style="margin:8px 0;color:#154360;font-weight:600"></div>';
@@ -62,17 +111,45 @@
     container.innerHTML = html;
 
     // set event handlers
-    qs('#pitstop-select').value = currentPitstop;
-    qs('#pitstop-select').addEventListener('change', function(){ currentPitstop = this.value; renderList(); });
+    qs('#pitstop-select').value = 'pitstop|'+currentPitstop;
+    qs('#pitstop-select').addEventListener('change', function(){ 
+      const parts = this.value.split('|');
+      currentPitstop = parts[1] || 'All';
+      currentBus = '';
+      qs('#bus-select').value = '';
+      renderList(); 
+    });
+    
+    qs('#bus-select').addEventListener('change', function(){
+      if(this.value){
+        const parts = this.value.split('|');
+        currentBus = parts[1] || '';
+        currentPitstop = 'All';
+        qs('#pitstop-select').value = 'pitstop|All';
+      } else {
+        currentBus = '';
+      }
+      renderList();
+    });
+    
     let debounceTimer = 0;
     qs('#students-search').addEventListener('input', function(){ clearTimeout(debounceTimer); debounceTimer = setTimeout(()=>{ searchTerm = this.value.trim().toLowerCase(); renderList(); }, 220); });
   }
 
   function matchesFilter(item){
-    if(currentPitstop && currentPitstop !== 'All'){
+    // Filter by bus if selected
+    if(currentBus){
+      const busNum = String(item.map['Bus Number'] || '').trim();
+      const platNum = String(item.map['Plate Number'] || '').trim();
+      const itemBusKey = busNum + '|' + platNum;
+      if(itemBusKey !== currentBus) return false;
+    } else if(currentPitstop && currentPitstop !== 'All'){
+      // Filter by pitstop if no bus is selected
       const p = String(item.map['PitStop PB'] || item.map['PitStop'] || '').trim();
       if(p !== currentPitstop) return false;
     }
+    
+    // Filter by search term
     if(!searchTerm) return true;
     const s = searchTerm;
     return (String(item.map['Nama Student']||'').toLowerCase().includes(s) || String(item.map['No Maktab']||'').toLowerCase().includes(s) || String(item.map['Phone Parent']||'').toLowerCase().includes(s));
@@ -81,10 +158,17 @@
   function renderList(){
     const listEl = qs('#students-list');
     if(!listEl) return;
-    // show volunteer info when a specific pitstop is selected
+    
+    // show volunteer info when a specific pitstop is selected, or bus info when a specific bus is selected
     const volEl = qs('#volunteer-info');
     if(volEl){
-      if(currentPitstop && currentPitstop !== 'All' && pitstopMap[currentPitstop]){
+      if(currentBus && busMap[currentBus]){
+        // Show bus details
+        const bus = busMap[currentBus];
+        const pitstopList = bus.pitstops.length > 0 ? bus.pitstops.join(', ') : 'No pitstop info';
+        volEl.innerHTML = 'Bus: ' + escapeHtml(bus.displayName) + ' — PitStops: ' + escapeHtml(pitstopList);
+      } else if(currentPitstop && currentPitstop !== 'All' && pitstopMap[currentPitstop]){
+        // Show volunteer details
         const v = pitstopMap[currentPitstop];
         const name = v.VolunteerName || v.Name || '';
         const phone = v.VolunteerPhone || v.Phone || '';
@@ -97,6 +181,7 @@
         volEl.innerHTML = '';
       }
     }
+    
     const filtered = rowsData.filter(matchesFilter);
     if(filtered.length === 0){ listEl.innerHTML = '<p>Tidak ada rekod untuk pilihan ini.</p>'; return; }
 
@@ -106,12 +191,27 @@
       const ting = escapeHtml(item.map['Tingkatan'] || '');
       const phone = item.map['Phone Parent'] || '';
       const pit = escapeHtml(item.map['PitStop PB'] || item.map['PitStop'] || '');
+      const busNum = String(item.map['Bus Number'] || '').trim();
+      const platNum = String(item.map['Plate Number'] || '').trim();
+      const busDisplay = busNum && platNum ? escapeHtml('Bus ' + busNum + ' - ' + platNum.toUpperCase()) : '';
+      
       const checkedVal = String(item.map['Checked'] || '').toLowerCase();
       const checked = checkedVal !== '' && checkedVal !== 'false' && checkedVal !== '0';
       const colIdx = headers.indexOf('Checked');
       const colNumber = colIdx >= 0 ? (colIdx + 1) : '';
       // include checkbox only when admin is logged in
       const phoneHtml = phone ? formatPhoneHtml(phone) : '';
+      
+      // Build meta line: no • ting • phone • pit (or bus if filtering by bus)
+      const metaParts = [no, ting];
+      if(phoneHtml) metaParts.push(phoneHtml);
+      if(currentBus && busDisplay){
+        metaParts.push(busDisplay);
+      } else if(pit){
+        metaParts.push(pit);
+      }
+      const metaHtml = metaParts.join(' • ');
+      
       const checkboxHtml = isAdmin() ? ('<div class="student-actions">'
         + '<input type="checkbox" class="finalist-checked" data-row="'+item.sheetRow+'" data-col="'+colNumber+'"'+(checked? ' checked':'')+'> '
         +'</div>') : '';
@@ -119,7 +219,7 @@
       return '<div class="student-row">'
         + '<div class="student-main">'
           + '<div class="student-name">'+name+'</div>'
-          + '<div class="student-meta">'+no + ' • ' + ting + (phoneHtml? ' • ' + phoneHtml : '') + (pit? ' • ' + pit : '') +'</div>'
+          + '<div class="student-meta">'+metaHtml+'</div>'
         + '</div>'
         + checkboxHtml
         + '</div>';
