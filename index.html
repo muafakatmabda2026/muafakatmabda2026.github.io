@@ -51,7 +51,7 @@
     /* Horizontal progress bar */
     .progress-bar-container { flex: 1; display: flex; flex-direction: column; gap: 8px; }
     .progress-bar-wrapper { position: relative; height: 18px; background: #e2e8f0; border-radius: 6px; overflow: hidden; }
-    .progress-bar-fill { position: absolute; top: 0; left: 0; height: 100%; background: linear-gradient(90deg, #cbd5e1 0%, #cbd5e1 16.66%, #93c5fd 16.66%, #93c5fd 33.33%, #60a5fa 33.33%, #60a5fa 50%, #2dd4bf 50%, #2dd4bf 66.66%, #4ade80 66.66%, #4ade80 83.33%, #16a34a 83.33%, #16a34a 100%); }
+    .progress-bar-fill { position: absolute; top: 0; left: 0; height: 100%; width: 0%; transition: width 300ms ease; }
     .progress-bar-segments { position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: flex; }
     .progress-segment { flex: 1; border-right: 1px solid rgba(255,255,255,0.4); }
     .progress-segment:last-child { border-right: none; }
@@ -132,7 +132,7 @@
       
       <div class="progress-bar-container">
         <div class="progress-bar-wrapper">
-          <div class="progress-bar-fill" style="width: 50%;"></div>
+          <div class="progress-bar-fill" id="progress-bar-fill"></div>
           <div class="progress-bar-segments">
             <div class="progress-segment"></div>
             <div class="progress-segment"></div>
@@ -144,6 +144,46 @@
         </div>
       </div>
     </section>
+
+    <script>
+      // Define the status steps and colors
+      const statusSteps = [
+        { name: 'Survey Belum Bermula', color: '#cbd5e1' },
+        { name: 'Survey Tamat', color: '#93c5fd' },
+        { name: 'Penentuan Jumlah Bas', color: '#60a5fa' },
+        { name: 'Tempahan Tiket Bermula', color: '#2dd4bf' },
+        { name: 'Tempahan Tiket Tamat', color: '#4ade80' },
+        { name: 'Senarai Nama Pelajar Dikeluarkan', color: '#16a34a' }
+      ];
+      
+      // UPDATE THIS VALUE TO CHANGE THE CURRENT STEP (1-6)
+      const currentStep = 3; // Penentuan Jumlah Bas
+      
+      function updateProgressBar(step) {
+        const progressFill = document.getElementById('progress-bar-fill');
+        const statusText = document.getElementById('current-status-text');
+        
+        // Update text
+        statusText.textContent = statusSteps[step - 1].name;
+        
+        // Calculate width based on step (step 1 = 16.66%, step 2 = 33.33%, etc.)
+        const progressWidth = (step / 6) * 100;
+        progressFill.style.width = progressWidth + '%';
+        
+        // Build gradient: show colors only up to current step + 1
+        const colors = statusSteps.slice(0, step).map(s => s.color);
+        const gradientColors = colors.map((color, idx) => {
+          const colorStart = (idx / 6) * 100;
+          const colorEnd = ((idx + 1) / 6) * 100;
+          return `${color} ${colorStart}%, ${color} ${colorEnd}%`;
+        }).join(', ');
+        
+        progressFill.style.background = `linear-gradient(90deg, ${gradientColors})`;
+      }
+      
+      // Initialize progress bar on page load
+      updateProgressBar(currentStep);
+    </script>
 
     <section class="status-section">
       <div id="site-status-placeholder"></div>
