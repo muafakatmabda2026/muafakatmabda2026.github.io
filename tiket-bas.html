@@ -67,12 +67,13 @@
   <!-- Validation Modal for Tempah Tiket -->
   <div id="validation-modal" class="modal active">
     <div class="modal-content">
-      <div class="modal-header">Sila Masukkan No Maktab</div>
+      <div class="modal-header">Sila Masukkan Maklumat Pelajar</div>
       <div class="modal-body">
         <div class="modal-message error" id="modal-error-msg"></div>
         <div class="modal-message success" id="modal-success-msg"></div>
         <div class="modal-loading" id="modal-loading"><span class="modal-spinner"></span>Menyemak data...</div>
-        <input type="text" id="no-maktab-input" class="modal-input" placeholder="Contoh: AB2XXXXX" maxlength="20" />
+        <input type="text" id="nama-student-input" class="modal-input" placeholder="Nama Pelajar" maxlength="100" />
+        <input type="text" id="no-maktab-input" class="modal-input" placeholder="No Maktab (Contoh: AB241126)" maxlength="20" />
       </div>
       <div class="modal-buttons">
         <button class="modal-btn modal-btn-primary" id="modal-submit-btn">Semak</button>
@@ -164,7 +165,8 @@
       const PROXY_TOKEN = 'mynameisvontdeuxthegreat123$';
       
       const modal = document.getElementById('validation-modal');
-      const input = document.getElementById('no-maktab-input');
+      const namaInput = document.getElementById('nama-student-input');
+      const noMaktabInput = document.getElementById('no-maktab-input');
       const submitBtn = document.getElementById('modal-submit-btn');
       const cancelBtn = document.getElementById('modal-cancel-btn');
       const loadingDiv = document.getElementById('modal-loading');
@@ -185,7 +187,8 @@
       // Helper: Show loading state
       function showLoading(show) {
         loadingDiv.style.display = show ? 'block' : 'none';
-        input.disabled = show;
+        namaInput.disabled = show;
+        noMaktabInput.disabled = show;
         submitBtn.disabled = show;
       }
       
@@ -208,15 +211,20 @@
         }, 1000);
       }
       
-      // Fetch and validate No Maktab from "Processed" tab via Google Apps Script JSONP with proxy
-      function validateNoMaktab(noMaktab) {
+      // Fetch and validate Nama Student + No Maktab from "Processed" tab via Google Apps Script JSONP with proxy
+      function validateStudentAccess(namaStudent, noMaktab) {
+        if (!namaStudent || namaStudent.trim() === '') {
+          showError('Sila masukkan Nama Pelajar.');
+          return;
+        }
         if (!noMaktab || noMaktab.trim() === '') {
           showError('Sila masukkan No Maktab.');
           return;
         }
         
         showLoading(true);
-        const normalizedInput = noMaktab.trim().toUpperCase();
+        const normalizedName = namaStudent.trim().toUpperCase();
+        const normalizedMaktab = noMaktab.trim().toUpperCase();
         
         // JSONP call via proxy (same pattern as students.js)
         const cb = 'processedDataCallback_' + Date.now();
@@ -234,10 +242,13 @@
               return;
             }
             
-            // Search for No Maktab in the data (column 3, index 3 in Processed sheet)
+            // Search for matching Nama Student AND No Maktab in the data
+            // Column 2 (index 2) = Nama Student, Column 3 (index 3) = No Maktab in Processed sheet
             const found = rows.some(row => {
-              if (!row || !row[3]) return false;
-              return row[3].toString().trim().toUpperCase() === normalizedInput;
+              if (!row || !row[2] || !row[3]) return false;
+              const rowName = row[2].toString().trim().toUpperCase();
+              const rowMaktab = row[3].toString().trim().toUpperCase();
+              return rowName === normalizedName && rowMaktab === normalizedMaktab;
             });
             
             if (found) {
@@ -341,12 +352,18 @@
       
       // Event handlers
       submitBtn.addEventListener('click', function() {
-        validateNoMaktab(input.value);
+        validateStudentAccess(namaInput.value, noMaktabInput.value);
       });
       
-      input.addEventListener('keypress', function(e) {
+      namaInput.addEventListener('keypress', function(e) {
         if (e.key === 'Enter') {
-          validateNoMaktab(input.value);
+          validateStudentAccess(namaInput.value, noMaktabInput.value);
+        }
+      });
+      
+      noMaktabInput.addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') {
+          validateStudentAccess(namaInput.value, noMaktabInput.value);
         }
       });
       
@@ -354,8 +371,8 @@
         window.location.href = 'index.html';
       });
       
-      // Focus on input when modal shown
-      input.focus();
+      // Focus on first input when modal shown
+      namaInput.focus();
     })();
   </script>
 
