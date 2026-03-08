@@ -370,9 +370,19 @@
       }
       
       renderList();
+      
+      // Update body data-admin attribute based on login state
+      function updateAdminAttribute(){
+        if(isAdmin()){
+          document.body.setAttribute('data-admin', '1');
+        } else {
+          document.body.removeAttribute('data-admin');
+        }
+      }
+      updateAdminAttribute(); // Set initial state
 
       // Re-render list when login state changes so checkboxes appear only after login
-      function refreshIfAuthChanged(){ renderList(); }
+      function refreshIfAuthChanged(){ updateAdminAttribute(); renderList(); }
       document.addEventListener('click', function(e){
         const t = e.target;
         if(t && (t.id === 'admin-login' || (t.closest && t.closest('#admin-login')))){
