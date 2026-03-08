@@ -1,8 +1,6 @@
-// Students UI: PitStop selector + search + filtered list (JSONP read, single-checkbox updates)
+// Students UI: PitStop selector + search + filtered list (direct fetch, single-checkbox updates)
 (function(){
   const APP_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbziJBrE4FKoyol7JqF---uEoq7tPzd292BGHVIIFR5DlO20z6UaB9qCVqW62uN8K_8k/exec';
-  const PROXY_URL = 'https://mabda-proxy.muafakatmabda2026.workers.dev/';
-  const PROXY_TOKEN = 'mynameisvontdeuxthegreat123$';
   const CACHE_TTL = 3600000; // 1 hour
   const PITSTOPS_CACHE_KEY = 'mabda_pitstops_cache';
   const FINALISTS_CACHE_KEY = 'mabda_finalists_cache';
@@ -277,50 +275,42 @@
     listEl.innerHTML = parts.join('');
   }
 
-  function jsonpFetchFinalist(timeout = 10000){
-    return new Promise((resolve, reject) => {
-      const cb = '__mabda_students_cb_' + Date.now() + '_' + Math.floor(Math.random()*1000);
-      const cleanup = () => { try{ delete window[cb]; }catch(e){} const s = document.getElementById(cb+'_script'); if(s && s.parentNode) s.parentNode.removeChild(s); };
-      window[cb] = function(data){ cleanup(); resolve(data); };
-      const s = document.createElement('script');
-      s.id = cb + '_script';
-      // request JSONP via proxy (proxy will fetch the target and return the callback-wrapped JS)
-      const tgt = APP_SCRIPT_URL + '?action=finalistpb&callback=' + cb;
-      s.src = PROXY_URL + '?url=' + encodeURIComponent(tgt) + '&token=' + encodeURIComponent(PROXY_TOKEN);
-      s.onerror = function(){ cleanup(); reject(new Error('JSONP load error')); };
-      document.head.appendChild(s);
-      setTimeout(()=>{ cleanup(); reject(new Error('JSONP timeout')); }, timeout);
+  function fetchFinalist(timeout = 10000){
+    return fetch(APP_SCRIPT_URL + '?action=finalistpb', {
+      method: 'GET',
+      timeout: timeout
+    })
+    .then(r => {
+      if (!r.ok) throw new Error('HTTP ' + r.status);
+      return r.json();
     });
   }
 
-  function jsonpFetchPitstops(timeout = 10000){
-    return new Promise((resolve, reject) => {
-      const cb = '__mabda_pitstops_cb_' + Date.now() + '_' + Math.floor(Math.random()*1000);
-      const cleanup = () => { try{ delete window[cb]; }catch(e){} const s = document.getElementById(cb+'_script'); if(s && s.parentNode) s.parentNode.removeChild(s); };
-      window[cb] = function(data){ cleanup(); resolve(data); };
-      const s = document.createElement('script');
-      s.id = cb + '_script';
-      const tgt = APP_SCRIPT_URL + '?action=pitstops&callback=' + cb;
-      s.src = PROXY_URL + '?url=' + encodeURIComponent(tgt) + '&token=' + encodeURIComponent(PROXY_TOKEN);
-      s.onerror = function(){ cleanup(); reject(new Error('JSONP load error')); };
-      document.head.appendChild(s);
-      setTimeout(()=>{ cleanup(); reject(new Error('JSONP timeout')); }, timeout);
+  function fetchPitstops(timeout = 10000){
+    return fetch(APP_SCRIPT_URL + '?action=pitstops', {
+      method: 'GET',
+      timeout: timeout
+    })
+    .then(r => {
+      if (!r.ok) throw new Error('HTTP ' + r.status);
+      return r.json();
     });
   }
 
-  function jsonpUpdateCell(row, col, value, timeout = 10000){
-    return new Promise((resolve, reject) => {
-      const cb = '__mabda_students_up_cb_' + Date.now() + '_' + Math.floor(Math.random()*1000);
-      const cleanup = () => { try{ delete window[cb]; }catch(e){} const s = document.getElementById(cb+'_script'); if(s && s.parentNode) s.parentNode.removeChild(s); };
-      window[cb] = function(data){ cleanup(); resolve(data); };
-      const params = '&row=' + encodeURIComponent(row) + '&col=' + encodeURIComponent(col) + '&value=' + encodeURIComponent(value);
-      const s = document.createElement('script');
-      s.id = cb + '_script';
-      const tgt = APP_SCRIPT_URL + '?action=update_finalistpb' + params + '&callback=' + cb;
-      s.src = PROXY_URL + '?url=' + encodeURIComponent(tgt) + '&token=' + encodeURIComponent(PROXY_TOKEN);
-      s.onerror = function(){ cleanup(); reject(new Error('JSONP load error')); };
-      document.head.appendChild(s);
-      setTimeout(()=>{ cleanup(); reject(new Error('JSONP timeout')); }, timeout);
+  function updateCell(row, col, value, timeout = 10000){
+    const params = new URLSearchParams();
+    params.append('action', 'update_finalistpb');
+    params.append('row', row);
+    params.append('col', col);
+    params.append('value', value);
+    
+    return fetch(APP_SCRIPT_URL + '?' + params.toString(), {
+      method: 'GET',
+      timeout: timeout
+    })
+    .then(r => {
+      if (!r.ok) throw new Error('HTTP ' + r.status);
+      return r.json();
     });
   }
 
@@ -333,12 +323,12 @@
       // Try to load from cache first
       let pitstopsPromise = Promise.resolve(getCacheItem(PITSTOPS_CACHE_KEY)).then(cached => {
         if(cached) return cached;
-        return jsonpFetchPitstops().then(data => { setCacheItem(PITSTOPS_CACHE_KEY, data); return data; });
+        return fetchPitstops().then(data => { setCacheItem(PITSTOPS_CACHE_KEY, data); return data; });
       });
       
       let finalistsPromise = Promise.resolve(getCacheItem(FINALISTS_CACHE_KEY)).then(cached => {
         if(cached) return cached;
-        return jsonpFetchFinalist().then(data => { setCacheItem(FINALISTS_CACHE_KEY, data); return data; });
+        return fetchFinalist().then(data => { setCacheItem(FINALISTS_CACHE_KEY, data); return data; });
       });
     
     // fetch pitstops first, then the finalists
@@ -402,7 +392,7 @@
           const col = t.getAttribute('data-col');
           const checked = t.checked ? 'TRUE' : '';
           t.disabled = true;
-          jsonpUpdateCell(row, col, checked).then(res => { t.disabled = false; }).catch(err => { t.disabled = false; console.error('Update failed', err); alert('Gagal mengemas kini. Sila semak konsol.'); });
+          updateCell(row, col, checked).then(res => { t.disabled = false; }).catch(err => { t.disabled = false; console.error('Update failed', err); alert('Gagal mengemas kini. Sila semak konsol.'); });
         }
       });
 

@@ -2,8 +2,6 @@
 // WARNING: This is a convenience layer for small/private usage. Do not treat as a production-grade auth.
 (function(){
   const APP_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbziJBrE4FKoyol7JqF---uEoq7tPzd292BGHVIIFR5DlO20z6UaB9qCVqW62uN8K_8k/exec';
-  const PROXY_URL = 'https://mabda-proxy.muafakatmabda2026.workers.dev/';
-  const PROXY_TOKEN = 'mynameisvontdeuxthegreat123$';
   const STORAGE_KEY = 'mabda_admin_user';
 
   function isAdmin() { return !!localStorage.getItem(STORAGE_KEY); }
@@ -44,72 +42,38 @@
   }
 
   function doLogin(user, pass){
-    // Primary attempt: POST JSON (preferred). If this fails due to CORS
-    // we fall back to a JSONP-style GET (requires the Apps Script to support it).
-    // POST via proxy to avoid CORS issues on mobile
-    return fetch(PROXY_URL + '?url=' + encodeURIComponent(APP_SCRIPT_URL), {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'x-api-key': PROXY_TOKEN },
-      body: JSON.stringify({ action: 'login', user: user, pass: pass })
-    }).then(async r => {
+    // Direct fetch to Google Apps Script (no proxy)
+    const params = new URLSearchParams();
+    params.append('action', 'login');
+    params.append('user', user);
+    params.append('pass', pass);
+    
+    return fetch(APP_SCRIPT_URL + '?' + params.toString(), {
+      method: 'GET',
+      timeout: 10000
+    })
+    .then(async r => {
       const text = await r.text();
-      // if response is not JSON or not OK, surface the body for debugging
       if(!r.ok){
-        return { ok: false, via: 'proxy', data: { error: 'HTTP ' + r.status + ': ' + (text || r.statusText) } };
+        return { ok: false, error: 'HTTP ' + r.status + ': ' + (text || r.statusText) };
       }
       try{
+        // Try to parse as JSON
         const data = text ? JSON.parse(text) : {};
         if(data && data.ok){
           setAdmin(user);
           updateUi();
-          return { ok: true, via: 'proxy', data };
+          return { ok: true, data };
         }
-        return { ok: false, via: 'proxy', data };
+        return { ok: false, data };
       }catch(e){
-        // non-JSON successful response
-        return { ok: false, via: 'proxy', data: { error: 'Non-JSON response: ' + (text && text.slice ? text.slice(0,200) : String(text)) } };
+        // Failed to parse - treat as error
+        return { ok: false, error: 'Invalid response from server' };
       }
-    }).catch(err => {
-      console.error('Primary login failed:', err);
-      // network-level error (proxy unreachable etc.) -> try JSONP fallback
-      return tryJsonpLogin(user, pass).then(data => {
-        if(data && data.ok){
-          setAdmin(user);
-          updateUi();
-          return { ok: true, via: 'jsonp', data };
-        }
-        return { ok: false, via: 'jsonp', data };
-      }).catch(e => {
-        // JSONP also failed
-        return Promise.reject(e);
-      });
-    });
-  }
-
-  // JSONP fallback: adds a <script> tag to perform a GET with a callback param.
-  // NOTE: JSONP requires the Apps Script endpoint to accept GET and wrap its
-  // JSON response in the provided callback, e.g. callback({ ok: true }).
-  function tryJsonpLogin(user, pass, timeout = 8000){
-    return new Promise((resolve, reject) => {
-      const cbName = '__mabda_admin_cb_' + Date.now() + '_' + Math.floor(Math.random()*1000);
-      const cleanup = () => {
-        try{ delete window[cbName]; }catch(e){}
-        const s = document.getElementById(cbName + '_script');
-        if(s && s.parentNode) s.parentNode.removeChild(s);
-      };
-
-      window[cbName] = function(data){ cleanup(); resolve(data); };
-
-      // JSONP via proxy: include the full target URL in the `url` param and pass token as `token` (script can't set headers)
-      const target = APP_SCRIPT_URL + '?action=login&user=' + encodeURIComponent(user) + '&pass=' + encodeURIComponent(pass) + '&callback=' + cbName;
-      const src = PROXY_URL + '?url=' + encodeURIComponent(target) + '&token=' + encodeURIComponent(PROXY_TOKEN);
-      const s = document.createElement('script');
-      s.src = src;
-      s.id = cbName + '_script';
-      s.onerror = function(e){ cleanup(); reject(new Error('JSONP script load error')); };
-      document.head.appendChild(s);
-
-      setTimeout(() => { cleanup(); reject(new Error('JSONP timeout')); }, timeout);
+    })
+    .catch(err => {
+      console.error('Login error:', err);
+      return { ok: false, error: 'Network error: ' + err.message };
     });
   }
 
@@ -152,5 +116,5 @@
 
   init();
   // expose API for dedicated login page (include endpoint for debugging)
-  try{ window.mabdaAdmin = { doLogin: doLogin, isAdmin: isAdmin, setAdmin: setAdmin, endpointRaw: APP_SCRIPT_URL, endpointProxy: PROXY_URL }; }catch(e){}
+  try{ window.mabdaAdmin = { doLogin: doLogin, isAdmin: isAdmin, setAdmin: setAdmin, endpointRaw: APP_SCRIPT_URL }; }catch(e){}
 })();
