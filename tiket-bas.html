@@ -176,8 +176,6 @@
   <script>
     (function() {
       const APP_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbziJBrE4FKoyol7JqF---uEoq7tPzd292BGHVIIFR5DlO20z6UaB9qCVqW62uN8K_8k/exec';
-      const PROXY_URL = 'https://mabda-proxy.muafakatmabda2026.workers.dev/';
-      const PROXY_TOKEN = 'mynameisvontdeuxthegreat123$';
       
       const modal = document.getElementById('validation-modal');
       const namaInput = document.getElementById('nama-student-input');
@@ -226,7 +224,7 @@
         }, 1000);
       }
       
-      // Fetch and validate Nama Student + No Maktab from "Processed" tab via Google Apps Script JSONP with proxy
+      // Fetch and validate Nama Student + No Maktab from "Processed" tab via direct Google Apps Script call
       function validateStudentAccess(namaStudent, noMaktab) {
         if (!namaStudent || namaStudent.trim() === '') {
           showError('Sila masukkan Nama Pelajar.');
@@ -241,15 +239,16 @@
         const normalizedName = namaStudent.trim().toUpperCase();
         const normalizedMaktab = noMaktab.trim().toUpperCase();
         
-        // JSONP call via proxy (same pattern as students.js)
-        const cb = 'processedDataCallback_' + Date.now();
-        const cleanup = () => {
-          try { delete window[cb]; } catch(e) {}
-          const s = document.getElementById(cb+'_script');
-          if (s && s.parentNode) s.parentNode.removeChild(s);
-        };
-        
-        window[cb] = function(data) {
+        // Direct fetch to Google Apps Script (no proxy)
+        fetch(APP_SCRIPT_URL + '?action=processed', {
+          method: 'GET',
+          timeout: 15000
+        })
+        .then(r => {
+          if (!r.ok) throw new Error('HTTP ' + r.status);
+          return r.json();
+        })
+        .then(data => {
           try {
             const rows = Array.isArray(data) ? data : (data && data.rows) || [];
             if (!rows || rows.length === 0) {
@@ -275,51 +274,31 @@
           } catch (err) {
             console.error('Validation error:', err);
             showError('Ralat semasa memproses data. Sila cuba lagi.');
-          } finally {
-            cleanup();
           }
-        };
-        
-        // Create script tag for JSONP via proxy
-        const s = document.createElement('script');
-        s.id = cb + '_script';
-        const tgt = APP_SCRIPT_URL + '?action=processed&callback=' + cb;
-        s.src = PROXY_URL + '?url=' + encodeURIComponent(tgt) + '&token=' + encodeURIComponent(PROXY_TOKEN);
-        s.onerror = function() {
+        })
+        .catch(err => {
+          console.error('Fetch error:', err);
           showError('Ralat: Tidak dapat terhubung dengan server. Sila cuba lagi.');
-          cleanup();
-        };
-        document.head.appendChild(s);
-        
-        // 15 second timeout
-        setTimeout(() => {
-          if (window[cb]) {
-            cleanup();
-            showError('Ralat: Permintaan tamat masa. Sila cuba lagi.');
-          }
-        }, 15000);
+        });
       }
       
       // Fetch payment URL after successful validation
       function fetchPaymentUrl() {
-        const cb = 'paymentUrlCallback_' + Date.now();
-        const cleanup = () => {
-          try { delete window[cb]; } catch(e) {}
-          const s = document.getElementById(cb+'_script');
-          if (s && s.parentNode) s.parentNode.removeChild(s);
-        };
-        
-        window[cb] = function(data) {
+        fetch(APP_SCRIPT_URL + '?action=payment_url', {
+          method: 'GET',
+          timeout: 15000
+        })
+        .then(r => {
+          if (!r.ok) throw new Error('HTTP ' + r.status);
+          return r.json();
+        })
+        .then(data => {
           try {
             if (data && data.url) {
               // Success - store URL and show success message
               const orderBtn = document.getElementById('order-btn');
               if (orderBtn) {
-                // Replace the inline PAYMENT_URL with the fetched URL
-                // Get the previous click listener's parent script and update
                 const paymentUrl = data.url;
-                // Find the script block that handles order button and update it
-                // Actually, we'll use a simpler approach: set a global and update the onclick
                 window.mabdaPaymentUrl = paymentUrl;
                 const orderBtnParent = orderBtn.closest('.agreement');
                 if (orderBtnParent) {
@@ -341,28 +320,12 @@
           } catch (err) {
             console.error('Payment URL fetch error:', err);
             showError('Ralat: Tidak dapat dapatkan URL pembayaran. Sila cuba lagi.');
-          } finally {
-            cleanup();
           }
-        };
-        
-        const s = document.createElement('script');
-        s.id = cb + '_script';
-        const tgt = APP_SCRIPT_URL + '?action=payment_url&callback=' + cb;
-        s.src = PROXY_URL + '?url=' + encodeURIComponent(tgt) + '&token=' + encodeURIComponent(PROXY_TOKEN);
-        s.onerror = function() {
+        })
+        .catch(err => {
+          console.error('Payment URL fetch error:', err);
           showError('Ralat: Tidak dapat dapatkan URL pembayaran. Sila cuba lagi.');
-          cleanup();
-        };
-        document.head.appendChild(s);
-        
-        // 15 second timeout
-        setTimeout(() => {
-          if (window[cb]) {
-            cleanup();
-            showError('Ralat: Permintaan dapatkan URL tamat masa. Sila cuba lagi.');
-          }
-        }, 15000);
+        });
       }
       
       // Event handlers
