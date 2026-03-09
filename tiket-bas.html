@@ -144,10 +144,25 @@
       </div>
 
       <script>
+        // Fetch payment URL
+        const APP_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbziJBrE4FKoyol7JqF---uEoq7tPzd292BGHVIIFR5DlO20z6UaB9qCVqW62uN8K_8k/exec';
+        var PAYMENT_URL = null;
+        
+        fetch(APP_SCRIPT_URL + '?action=payment_url', {
+          method: 'GET',
+          timeout: 15000
+        })
+        .then(r => r.json())
+        .then(data => {
+          if (data && data.url) {
+            PAYMENT_URL = data.url;
+          }
+        })
+        .catch(err => console.log('Could not fetch payment URL:', err));
+        
         (function(){
           var cb = document.getElementById('agree-checkbox');
           var btn = document.getElementById('order-btn');
-          var url = PAYMENT_URL;
           if(!cb || !btn) return;
           // initialize visual state so disabled appears greyed when page first loads
           btn.disabled = !cb.checked;
@@ -160,11 +175,11 @@
           });
           btn.addEventListener('click', function(e){
             if(btn.disabled) return;
-            if(!url){
+            if(!PAYMENT_URL){
               alert('Ralat: URL pembayaran tidak tersedia. Sila muat semula halaman.');
               return;
             }
-            window.open(url, '_blank', 'noopener');
+            window.open(PAYMENT_URL, '_blank', 'noopener');
           });
         })();
       </script>
